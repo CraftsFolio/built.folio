@@ -1,0 +1,5429 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Video Editor Portfolio</title>
+    <!-- Google Fonts for bold, geometric typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;800;900&family=Playfair+Display:wght@900&display=block"
+        rel="stylesheet" />
+
+    <style>
+        /* ══════════════════════════════════════════════════════
+           NAV CURTAIN
+        ══════════════════════════════════════════════════════ */
+
+
+        /* ── TRIPLE COLUMN CINEMATIC CURTAIN WIPE ── */
+        #nav-curtain {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            pointer-events: none;
+            display: flex;
+            flex-direction: row;
+            /* Stack sections horizontally to make columns */
+            visibility: hidden;
+        }
+
+        #nav-curtain.active {
+            pointer-events: all;
+            visibility: visible;
+        }
+
+        /* The 3 black columns */
+        .curtain-col {
+            flex: 1;
+            height: 100vh;
+            background-color: #050505;
+            transform: translateY(105%);
+            will-change: transform;
+            margin-right: -1px;
+        }
+
+        /* Brand overlay for cinematic reveal */
+        .brand-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .brand-text {
+            font-family: inherit;
+            font-size: clamp(6rem, 18vw, 22rem);
+            color: #fff;
+            letter-spacing: -3px;
+            text-transform: uppercase;
+            font-weight: 900;
+            line-height: 1;
+            display: flex;
+            align-items: flex-end;
+            position: relative;
+            padding-bottom: 14px;
+        }
+
+        .brand-letter-wrap {
+            overflow: hidden;
+            display: inline-block;
+            line-height: 1.08;
+        }
+
+        .brand-letter {
+            display: inline-block;
+            transform: translateY(112%);
+            will-change: transform;
+        }
+
+        .brand-line {
+            display: none;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           GLOBAL RESET & BASE STYLES
+        ══════════════════════════════════════════════════════ */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0b0b;
+            color: #fff;
+            overflow-x: hidden;
+            font-family: "Outfit", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            cursor: none;
+            opacity: 0;
+        }
+
+        a,
+        button {
+            cursor: none !important;
+        }
+
+        /* Prevent browsers from making auto-detected phone numbers blue */
+        a[href^="tel"] {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           FIXED UI ELEMENTS (GLASS BLUR + CURSOR)
+        ══════════════════════════════════════════════════════ */
+
+        /* SUPER PREMIUM TOP GLASS BLUR EFFECT */
+        .top-glass-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 15vh;
+            z-index: 990;
+            /* Very high but safely under the custom cursor */
+            pointer-events: none;
+            /* Let clicks pass through to nav elements */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            mask-image: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 1) 0%,
+                    rgba(0, 0, 0, 0) 100%);
+            -webkit-mask-image: linear-gradient(to bottom,
+                    rgba(0, 0, 0, 1) 0%,
+                    rgba(0, 0, 0, 0) 100%);
+        }
+
+        /* CUSTOM SMOOTH CURSOR */
+        .custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 50px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99999;
+            mix-blend-mode: difference;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition:
+                width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: width, height, transform;
+            backface-visibility: hidden;
+            transform: translateZ(0);
+            opacity: 0;
+            /* Hidden until first mousemove */
+        }
+
+        .custom-cursor::after {
+            content: "\25B6";
+            font-size: 2rem;
+            color: #000;
+            opacity: 0;
+            transform: scale(0.5);
+            transition:
+                opacity 0.4s ease,
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-left: 5px;
+            /* Center geometric triangle visually */
+        }
+
+        .custom-cursor.play-cursor {
+            width: 100px;
+            height: 100px;
+        }
+
+        .custom-cursor.play-cursor::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .custom-cursor.stop-cursor {
+            width: 100px;
+            height: 100px;
+        }
+
+        .custom-cursor.stop-cursor::after {
+            content: "\25A0";
+            font-size: 2rem;
+            color: #000;
+            opacity: 1;
+            transform: scale(1);
+            margin-left: 0;
+            /* Center stop icon */
+        }
+
+        /* HERO TRANSITION LINES */
+        .hero-transition-lines {
+            position: fixed;
+            /* Fixed = stays in viewport, always ON TOP of section-two */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 950;
+            pointer-events: none;
+            /* Fade out at the bottom so lines dissolve before reaching viewport edge */
+            mask-image: linear-gradient(to bottom,
+                    black 0%,
+                    black 55%,
+                    transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom,
+                    black 0%,
+                    black 55%,
+                    transparent 100%);
+            will-change: transform;
+        }
+
+        .hero-line {
+            position: absolute;
+            top: -50vh;
+            background: linear-gradient(to bottom,
+                    transparent,
+                    rgba(255, 255, 255, 0.9) 50%,
+                    transparent);
+            border-radius: 10px;
+            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.7));
+            opacity: 0.5;
+        }
+
+        .hl1 {
+            left: 12%;
+            width: 2px;
+            height: 35vh;
+        }
+
+        .hl2 {
+            left: 28%;
+            width: 4px;
+            height: 50vh;
+        }
+
+        .hl3 {
+            left: 42%;
+            width: 1px;
+            height: 25vh;
+        }
+
+        .hl4 {
+            left: 62%;
+            width: 3px;
+            height: 45vh;
+        }
+
+        .hl5 {
+            left: 78%;
+            width: 5px;
+            height: 70vh;
+        }
+
+        .hl6 {
+            left: 88%;
+            width: 2px;
+            height: 30vh;
+        }
+
+        .hl7 {
+            left: 8%;
+            width: 1px;
+            height: 40vh;
+            opacity: 0.3;
+        }
+
+        .hl8 {
+            left: 18%;
+            width: 3px;
+            height: 20vh;
+        }
+
+        .hl9 {
+            left: 32%;
+            width: 2px;
+            height: 60vh;
+        }
+
+        .hl10 {
+            left: 55%;
+            width: 4px;
+            height: 30vh;
+            opacity: 0.7;
+        }
+
+        .hl11 {
+            left: 72%;
+            width: 2px;
+            height: 55vh;
+        }
+
+        .hl12 {
+            left: 95%;
+            width: 1px;
+            height: 35vh;
+            opacity: 0.4;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           SELECTION & SMOOTH SCROLL (LENIS)
+        ══════════════════════════════════════════════════════ */
+
+        ::selection {
+            background-color: #000;
+            color: #fff;
+        }
+
+        /* LENIS SMOOTH SCROLL STYLES */
+        html.lenis,
+        html.lenis body {
+            height: auto;
+        }
+
+        .lenis.lenis-smooth {
+            scroll-behavior: auto !important;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        .lenis.lenis-scrolling iframe {
+            pointer-events: none;
+        }
+
+        /* ══════════════════════════════════════════════════════
+           GLOBAL CINEMATIC DEPTH (NOISE & VIGNETTE)
+        ══════════════════════════════════════════════════════ */
+        .noise-overlay {
+            position: fixed;
+            top: -50vh;
+            left: -50vw;
+            width: 200vw;
+            height: 200vh;
+            pointer-events: none;
+            z-index: 9997;
+            opacity: 0.12;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 80px 80px;
+            animation: noiseMove 0.4s steps(4) infinite;
+        }
+
+        @keyframes noiseMove {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            25% {
+                transform: translate(-2%, 3%);
+            }
+
+            50% {
+                transform: translate(1%, -2%);
+            }
+
+            75% {
+                transform: translate(3%, 1%);
+            }
+
+            100% {
+                transform: translate(-1%, -3%);
+            }
+        }
+
+        .pattern-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            /* Above background gradient but below content */
+            pointer-events: none;
+            opacity: 0.25;
+            background-image:
+                radial-gradient(circle at center, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+                linear-gradient(45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.03) 75%, rgba(255, 255, 255, 0.03)),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.03) 75%, rgba(255, 255, 255, 0.03));
+            background-size: 32px 32px, 64px 64px, 64px 64px;
+            mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, 0) 80%);
+            -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1) 10%, rgba(0, 0, 0, 0) 80%);
+        }
+
+        .vignette-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9996;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.85) 100%);
+            mix-blend-mode: multiply;
+        }
+
+        /* --- DYNAMIC LUXURY AURORA BACKGROUNDS --- */
+        .hero::before,
+        .hero::after,
+        .section-two::before,
+        .section-two::after,
+        .section-three::before,
+        .section-three::after,
+        .section-four::before,
+        .section-four::after,
+        .pricing-section::before,
+        .pricing-section::after,
+        .stats-section::before,
+        .stats-section::after,
+        .site-footer::before,
+        .site-footer::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.7;
+            z-index: -1;
+            pointer-events: none;
+            animation: floatingGlow 20s infinite alternate ease-in-out;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes floatingGlow {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(15vw, -10vh) scale(1.15);
+            }
+
+            66% {
+                transform: translate(-10vw, 15vh) scale(0.85);
+            }
+
+            100% {
+                transform: translate(5vw, 5vh) scale(1.05);
+            }
+        }
+
+        /* ══════════════════════════════ 1. HERO SECTION ══════════════════════════════ */
+        .hero {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at center, #2e0900 0%, #170400 60%, #050000 100%);
+            /* Deep cinematic volumetric base for vivid glows */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 2.5rem 4rem;
+            z-index: 10;
+        }
+
+        .hero::before {
+            width: 70vw;
+            height: 70vw;
+            background: #fa4616;
+            top: -10vh;
+            left: -10vw;
+            animation-delay: -3s;
+        }
+
+        .hero::after {
+            width: 80vw;
+            height: 80vw;
+            background: #ffcfa8;
+            bottom: -20vh;
+            right: -10vw;
+            animation-delay: -7s;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 110;
+            position: absolute;
+            top: 2rem;
+            right: 3rem;
+            width: calc(100% - 6rem);
+            pointer-events: none;
+        }
+
+        header * {
+            pointer-events: auto;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.75rem;
+            font-weight: 400;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 1.35rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        nav a::after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: #fff;
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        /* SOCIALS */
+        .socials {
+            position: absolute;
+            left: 4rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            z-index: 10;
+        }
+
+        .socials a {
+            text-decoration: none;
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: 400;
+            font-size: 2.2rem;
+            letter-spacing: 1.5px;
+            position: relative;
+            display: inline-block;
+            transition: opacity 0.3s;
+        }
+
+        .socials a::after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -3px;
+            left: 0;
+            background-color: #fff;
+            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .socials a:hover::after {
+            width: 100%;
+        }
+
+        /* BIG TEXT */
+        .big-text-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -58%);
+            z-index: 1;
+            width: 100%;
+            text-align: center;
+        }
+
+        .big-text {
+            font-size: 24vw;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+            white-space: nowrap;
+            letter-spacing: -3px;
+            margin: 0;
+        }
+
+        /* PROFILE CONTAINER */
+        .profile-container {
+            position: absolute;
+            bottom: 0px !important;
+            left: 50% !important;
+            /* Base center anchor */
+            visibility: hidden;
+            opacity: 1;
+            /* JS snaps to visible before sliding, eliminating FOUC and Fade */
+            height: 75vh;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        .profile-img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+            object-position: bottom;
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* ACCENT SQUARES */
+        .accent-squares {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 25vw;
+            height: 25vw;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .square {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transform-origin: center;
+        }
+
+        .square-1 {
+            width: 100%;
+            height: 100%;
+        }
+
+        .square-2 {
+            width: 125%;
+            height: 125%;
+        }
+
+        .square-3 {
+            width: 150%;
+            height: 150%;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .square-4 {
+            width: 175%;
+            height: 175%;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ACCENT HEXAGONS (LONG FORM) */
+        .purple-hexagons {
+            position: absolute;
+            top: -5vw;
+            left: -5vw;
+            width: 40vw;
+            height: 40vw;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .p-hexagon {
+            position: absolute;
+            border: 1px solid rgba(192, 132, 252, 0.35);
+            /* Violet glow borders */
+            border-radius: 40px;
+            transform-origin: center;
+            width: 60%;
+            height: 100%;
+        }
+
+        .p-hexagon-1 {
+            transform: rotate(0deg);
+        }
+
+        .p-hexagon-2 {
+            transform: rotate(30deg);
+            border-style: dashed;
+            border-color: rgba(192, 132, 252, 0.2);
+        }
+
+        .p-hexagon-3 {
+            transform: rotate(60deg);
+            border-color: rgba(192, 132, 252, 0.1);
+        }
+
+        /* ACCENT HEXAGONS (SHORTS) */
+        .accent-hexagons {
+            position: absolute;
+            bottom: 5%;
+            right: 0%;
+            width: 30vw;
+            height: 30vw;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .hexagon {
+            position: absolute;
+            border: 1px solid rgba(147, 197, 253, 0.3);
+            border-radius: 40px;
+            transform-origin: center;
+            width: 60%;
+            height: 100%;
+        }
+
+        .hexagon-1 {
+            transform: rotate(0deg);
+        }
+
+        .hexagon-2 {
+            transform: rotate(30deg);
+            border-style: dashed;
+            border-color: rgba(147, 197, 253, 0.2);
+        }
+
+        .hexagon-3 {
+            transform: rotate(60deg);
+            border-color: rgba(147, 197, 253, 0.1);
+        }
+
+        /* ══════════════════════════════ 2. SECTION TWO (CREATORS) ══════════════════════════════ */
+        .section-two {
+            width: 100vw;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #022e00 0%, #011400 60%, #000500 100%);
+            /* Deep cinematic volumetric forest green */
+            position: relative;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -15vh;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .section-two::before {
+            width: 60vw;
+            height: 60vw;
+            background: #0e8500;
+            top: 10vh;
+            right: -5vw;
+            animation-delay: -2s;
+        }
+
+        .section-two::after {
+            width: 75vw;
+            height: 75vw;
+            background: #9eff6b;
+            bottom: -10vh;
+            left: -15vw;
+            animation-delay: -8s;
+        }
+
+        .green-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            position: relative;
+        }
+
+        .green-text-wrapper {
+            position: absolute;
+            top: 25%;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+            width: 100vw;
+            display: flex;
+            justify-content: flex-start;
+            padding-left: 5%;
+        }
+
+        .creator-title {
+            font-size: 13vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.12);
+            -webkit-text-stroke: 0;
+            text-transform: uppercase;
+            letter-spacing: -0.5vw;
+            margin: 0;
+            line-height: 0.85;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .creator-scroll-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 7vw;
+            padding: 0 10vw 0 60vw;
+            height: clamp(300px, 45vh, 600px);
+            width: max-content;
+            align-items: center;
+            margin-top: 5vh;
+            z-index: 5;
+        }
+
+        .creator-scroll-grid::before,
+        .creator-scroll-grid::after {
+            content: "";
+            flex: 0 0 2vw;
+        }
+
+        .creator {
+            position: relative;
+            flex: 0 0 auto;
+            width: 16vw;
+            height: 16vw;
+            min-width: 180px;
+            min-height: 180px;
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: block;
+            transition:
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.4s ease;
+            background-color: #222;
+        }
+
+        /* Dark overlay on hover — the SVG arrow is injected via JS */
+        .creator::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.52);
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .creator:hover::before {
+            opacity: 1;
+        }
+
+        /* SVG arrow injected via JS — draw animation on hover */
+        .creator-arrow-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+            border-radius: 50%;
+            padding: 32%;
+            box-sizing: border-box;
+            transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .creator:hover .creator-arrow-svg {
+            opacity: 1;
+        }
+
+        /* Each line element draws itself via stroke-dashoffset */
+        .creator-arrow-svg line {
+            stroke-dashoffset: var(--len, 60);
+            transition: stroke-dashoffset 0.45s cubic-bezier(0.77, 0, 0.18, 1);
+        }
+
+        .creator:hover .creator-arrow-svg line:nth-child(1) {
+            stroke-dashoffset: 0;
+            transition-delay: 0s;
+        }
+
+        .creator:hover .creator-arrow-svg line:nth-child(2) {
+            stroke-dashoffset: 0;
+            transition-delay: 0.22s;
+        }
+
+        .creator:hover .creator-arrow-svg line:nth-child(3) {
+            stroke-dashoffset: 0;
+            transition-delay: 0.32s;
+        }
+
+        .creator:nth-child(odd) {
+            margin-bottom: 25vh;
+        }
+
+        .creator:nth-child(even) {
+            margin-top: 25vh;
+        }
+
+        .section-two .creator:hover {
+            transform: scale(1.15) translateY(-5px) !important;
+            z-index: 10 !important;
+        }
+
+        /* SHINE SWEEP EFFECT */
+        .creator::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.25) 50%,
+                    rgba(255, 255, 255, 0) 100%);
+            transform: skewX(-25deg);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .creator:hover::after {
+            animation: lightSweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes lightSweep {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 150%;
+            }
+        }
+
+        .creator:hover {
+            transform: scale(1.1) translateY(-15px);
+            z-index: 5;
+        }
+
+        .creator img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            /* Prevent drag-and-drop on creator images */
+            -webkit-user-drag: none;
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: none;
+        }
+
+        /* ACCENT SQUARES (GREEN SECTION) */
+        .green-squares {
+            position: absolute;
+            bottom: 5%;
+            left: 5%;
+            width: 30vw;
+            height: 30vw;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .g-square {
+            position: absolute;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            transform-origin: center;
+            width: 60%;
+            height: 60%;
+        }
+
+        .g-square-1 {
+            transform: rotate(0deg);
+        }
+
+        .g-square-2 {
+            transform: rotate(30deg);
+            border-style: dashed;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .g-square-3 {
+            transform: rotate(60deg);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* TRANSITION LINES */
+        .transition-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Spans the entire section, allowing lines to continually fall */
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .line {
+            position: absolute;
+            top: -50vh;
+            background: linear-gradient(to bottom,
+                    transparent,
+                    #9eff6b 50%,
+                    transparent);
+            border-radius: 10px;
+            filter: drop-shadow(0 0 10px rgba(158, 255, 107, 0.8));
+            opacity: 0.6;
+        }
+
+        .l1 {
+            left: 10%;
+            width: 2px;
+            height: 35vh;
+        }
+
+        .l2 {
+            left: 25%;
+            width: 4px;
+            height: 50vh;
+        }
+
+        .l3 {
+            left: 45%;
+            width: 1px;
+            height: 25vh;
+        }
+
+        .l4 {
+            left: 65%;
+            width: 3px;
+            height: 45vh;
+        }
+
+        .l5 {
+            left: 80%;
+            width: 5px;
+            height: 70vh;
+        }
+
+        .l6 {
+            left: 90%;
+            width: 2px;
+            height: 30vh;
+        }
+
+        .l7 {
+            left: 5%;
+            width: 1px;
+            height: 40vh;
+        }
+
+        .l8 {
+            left: 15%;
+            width: 3px;
+            height: 20vh;
+            opacity: 0.4;
+        }
+
+        .l9 {
+            left: 30%;
+            width: 2px;
+            height: 60vh;
+        }
+
+        .l10 {
+            left: 38%;
+            width: 4px;
+            height: 30vh;
+        }
+
+        .l11 {
+            left: 50%;
+            width: 2px;
+            height: 55vh;
+        }
+
+        .l12 {
+            left: 58%;
+            width: 1px;
+            height: 35vh;
+            opacity: 0.5;
+        }
+
+        .l13 {
+            left: 70%;
+            width: 3px;
+            height: 25vh;
+        }
+
+        .l14 {
+            left: 85%;
+            width: 2px;
+            height: 45vh;
+        }
+
+        .l15 {
+            left: 95%;
+            width: 1px;
+            height: 50vh;
+        }
+
+        .l16 {
+            left: 20%;
+            width: 2px;
+            height: 80vh;
+        }
+
+        .l17 {
+            left: 75%;
+            width: 1px;
+            height: 65vh;
+            opacity: 0.3;
+        }
+
+        .l18 {
+            left: 40%;
+            width: 3px;
+            height: 15vh;
+        }
+
+        /* ══════════════════════════════ 3. SECTION THREE (LONG FORM) ══════════════════════════════ */
+        .section-three {
+            width: 100vw;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1b0440 0%, #0a0117 60%, #030005 100%);
+            /* Extra deep volumetric midnight purple */
+            position: relative;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -15vh;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .section-three::before {
+            width: 70vw;
+            height: 70vw;
+            background: #4c1d95;
+            top: -5vh;
+            left: -10vw;
+            animation-delay: -4s;
+        }
+
+        .section-three::after {
+            width: 80vw;
+            height: 80vw;
+            background: #c084fc;
+            bottom: 15vh;
+            right: -10vw;
+            animation-delay: -9s;
+        }
+
+        /* PURPLE TRANSITION LINES */
+        .purple-transition-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .purple-line {
+            position: absolute;
+            top: -50vh;
+            background: linear-gradient(to bottom,
+                    transparent,
+                    rgba(221, 214, 254, 0.9) 50%,
+                    transparent);
+            border-radius: 10px;
+            filter: drop-shadow(0 0 15px rgba(196, 181, 253, 0.8));
+            opacity: 0.6;
+        }
+
+        .pl1 {
+            left: 10%;
+            width: 2px;
+            height: 35vh;
+        }
+
+        .pl2 {
+            left: 25%;
+            width: 4px;
+            height: 50vh;
+        }
+
+        .pl3 {
+            left: 45%;
+            width: 1px;
+            height: 25vh;
+        }
+
+        .pl4 {
+            left: 65%;
+            width: 3px;
+            height: 45vh;
+        }
+
+        .pl5 {
+            left: 80%;
+            width: 5px;
+            height: 70vh;
+        }
+
+        .pl6 {
+            left: 90%;
+            width: 2px;
+            height: 30vh;
+        }
+
+        .pl7 {
+            left: 5%;
+            width: 1px;
+            height: 40vh;
+        }
+
+        .pl8 {
+            left: 15%;
+            width: 3px;
+            height: 20vh;
+            opacity: 0.4;
+        }
+
+        .pl9 {
+            left: 30%;
+            width: 2px;
+            height: 60vh;
+        }
+
+        .pl10 {
+            left: 38%;
+            width: 4px;
+            height: 30vh;
+            opacity: 0.7;
+        }
+
+        .pl11 {
+            left: 50%;
+            width: 2px;
+            height: 55vh;
+        }
+
+        .pl12 {
+            left: 58%;
+            width: 1px;
+            height: 35vh;
+            opacity: 0.5;
+        }
+
+        .pl13 {
+            left: 70%;
+            width: 3px;
+            height: 25vh;
+        }
+
+        .pl14 {
+            left: 85%;
+            width: 2px;
+            height: 45vh;
+        }
+
+        .pl15 {
+            left: 95%;
+            width: 1px;
+            height: 50vh;
+            opacity: 0.8;
+        }
+
+        .pl16 {
+            left: 20%;
+            width: 2px;
+            height: 80vh;
+        }
+
+        .pl17 {
+            left: 75%;
+            width: 1px;
+            height: 65vh;
+            opacity: 0.3;
+        }
+
+        .pl18 {
+            left: 40%;
+            width: 3px;
+            height: 15vh;
+        }
+
+        /* EXTENDED PURPLE LAYOUT */
+        .purple-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            position: relative;
+        }
+
+        .epic-text-wrapper {
+            position: absolute;
+            top: 8%;
+            right: 0;
+            z-index: 1;
+            /* Behind videos (grid z-index: 5) — decorative background only */
+            pointer-events: none;
+            width: 100vw;
+            display: flex;
+            justify-content: flex-end;
+            padding-right: 5%;
+        }
+
+        .epic-title {
+            font-size: 11vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.15);
+            -webkit-text-stroke: 0;
+            text-transform: uppercase;
+            letter-spacing: -0.5vw;
+            margin: 0;
+            line-height: 0.9;
+            text-align: right;
+            white-space: normal;
+        }
+
+        .stagger-left {
+            display: inline-block;
+            margin-right: 12vw;
+            /* Drives element physically left symmetrically extending bounds relative to absolute geometric center */
+        }
+
+        .stagger-right {
+            display: inline-block;
+            margin-left: 12vw;
+            /* Drives element rightwards symmetrically */
+        }
+
+        .long-form-grid {
+            display: flex;
+            flex-direction: row-reverse;
+            /* Reverses DOM physically to ensure GSAP Left-to-Right layout */
+            flex-wrap: nowrap;
+            gap: 4vw;
+            padding: 0 4vw;
+            /* Soft bounding pad to detach screen wall */
+            height: clamp(320px, 55vh, 800px);
+            width: max-content;
+            align-items: center;
+            z-index: 5;
+        }
+
+        /* Dead-scroll delays disabled */
+        .long-form-grid::before,
+        .long-form-grid::after {
+            content: "";
+            flex: 0 0 1vw;
+            /* Minimal safety buffer */
+        }
+
+        .video-wrapper {
+            position: relative;
+            flex: 0 0 auto;
+            height: 100%;
+            aspect-ratio: 16 / 9;
+            /* WIDESCREEN CINEMATIC */
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: #000;
+            transform-origin: center;
+            cursor: none !important;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            pointer-events: none;
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+            /* Let the wrapper handle clicks */
+        }
+
+        /* ══════════════════════════════ 4. SECTION FOUR (SHORT FORM) ══════════════════════════════ */
+        .section-four {
+            width: 100vw;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #00102e 0%, #00040a 60%, #000103 100%);
+            /* Majestic volumetric very dark blue base */
+            position: relative;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -15vh;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .section-four::before {
+            width: 60vw;
+            height: 60vw;
+            background: #00a3ff;
+            top: -10vh;
+            right: -10vw;
+            animation-delay: -5s;
+        }
+
+        .section-four::after {
+            width: 80vw;
+            height: 80vw;
+            background: #00ffff;
+            bottom: -20vh;
+            left: -15vw;
+            animation-delay: -11s;
+        }
+
+        /* BLUE TRANSITION LINES */
+        .blue-transition-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .blue-line {
+            position: absolute;
+            top: -50vh;
+            background: linear-gradient(to bottom,
+                    transparent,
+                    rgba(147, 197, 253, 0.9) 50%,
+                    transparent);
+            border-radius: 10px;
+            filter: drop-shadow(0 0 15px rgba(96, 165, 250, 0.8));
+            opacity: 0.6;
+        }
+
+        .bl1 {
+            left: 10%;
+            width: 2px;
+            height: 35vh;
+        }
+
+        .bl2 {
+            left: 25%;
+            width: 4px;
+            height: 50vh;
+        }
+
+        .bl3 {
+            left: 45%;
+            width: 1px;
+            height: 25vh;
+        }
+
+        .bl4 {
+            left: 65%;
+            width: 3px;
+            height: 45vh;
+        }
+
+        .bl5 {
+            left: 80%;
+            width: 5px;
+            height: 70vh;
+        }
+
+        .bl6 {
+            left: 90%;
+            width: 2px;
+            height: 30vh;
+        }
+
+        .bl7 {
+            left: 5%;
+            width: 1px;
+            height: 40vh;
+        }
+
+        .bl8 {
+            left: 15%;
+            width: 3px;
+            height: 20vh;
+            opacity: 0.4;
+        }
+
+        .bl9 {
+            left: 30%;
+            width: 2px;
+            height: 60vh;
+        }
+
+        .bl10 {
+            left: 38%;
+            width: 4px;
+            height: 30vh;
+            opacity: 0.7;
+        }
+
+        .bl11 {
+            left: 50%;
+            width: 2px;
+            height: 55vh;
+        }
+
+        .bl12 {
+            left: 58%;
+            width: 1px;
+            height: 35vh;
+            opacity: 0.5;
+        }
+
+        .bl13 {
+            left: 70%;
+            width: 3px;
+            height: 25vh;
+        }
+
+        .bl14 {
+            left: 85%;
+            width: 2px;
+            height: 45vh;
+        }
+
+        .bl15 {
+            left: 95%;
+            width: 1px;
+            height: 50vh;
+            opacity: 0.8;
+        }
+
+        .bl16 {
+            left: 20%;
+            width: 2px;
+            height: 80vh;
+        }
+
+        .bl17 {
+            left: 75%;
+            width: 1px;
+            height: 65vh;
+            opacity: 0.3;
+        }
+
+        .bl18 {
+            left: 40%;
+            width: 3px;
+            height: 15vh;
+        }
+
+        .blue-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            position: relative;
+        }
+
+        .blue-text-wrapper {
+            position: absolute;
+            top: 8%;
+            /* Pushed higher tightly to ceiling airspace */
+            left: 0;
+            /* Fully anchored Left */
+            z-index: 1;
+            pointer-events: none;
+            width: 100vw;
+            display: flex;
+            justify-content: flex-start;
+            /* Align left natively */
+            padding-left: 5%;
+            /* Distance from edge */
+        }
+
+        .viral-title {
+            font-size: 11vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.15);
+            -webkit-text-stroke: 0;
+            /* Stroke removed */
+            text-transform: uppercase;
+            letter-spacing: -0.5vw;
+            margin: 0;
+            line-height: 0.9;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .short-form-grid {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 4vw;
+            padding: 0 4vw 0 90vw;
+            /* Maximum left-padding pushing videos fully off the left-aligned text at start */
+            height: clamp(600px, 80vh, 1600px);
+            /* Double the original scale for better client preview */
+            width: max-content;
+            align-items: center;
+            margin-top: 12vh;
+            /* Forcibly shifts massive videos down averting text masking completely */
+            z-index: 5;
+        }
+
+        /* Dead-scroll delays disabled */
+        .short-form-grid::before,
+        .short-form-grid::after {
+            content: "";
+            flex: 0 0 1vw;
+        }
+
+        .short-video-wrapper {
+            position: relative;
+            flex: 0 0 auto;
+            /* Do NOT force horizontal stretching */
+            height: 100%;
+            aspect-ratio: 9 / 16;
+            /* PERFECT CUT! Removes all YouTube thumbnail side-padding! */
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: #000;
+            transform-origin: center;
+            cursor: none !important;
+        }
+
+        .short-video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            pointer-events: none;
+        }
+
+        /* ══════════════════════════════ 5. DESKTOP MEDIA QUERIES ══════════════════════════════ */
+
+        /* MEDIA QUERIES FOR RESPONSIVENESS */
+        @media (max-width: 1024px) {
+
+            .blue-content,
+            .green-content {
+                height: 100vh;
+                padding: 0;
+            }
+
+            .viral-title,
+            .epic-title,
+            .creator-title {
+                text-align: center;
+                font-size: 18vw;
+                -webkit-text-stroke: 0;
+            }
+
+            .short-form-grid,
+            .creator-scroll-grid {
+                padding: 0 4vw;
+                gap: 8vw;
+                height: 70vh;
+            }
+
+            .short-form-grid::before,
+            .short-form-grid::after,
+            .creator-scroll-grid::before,
+            .creator-scroll-grid::after {
+                content: "";
+                flex: 0 0 1vw;
+            }
+
+            .short-video-wrapper {
+                flex: 0 0 60vw;
+            }
+
+            .creator {
+                width: 35vw;
+                height: 35vw;
+            }
+
+            .creator:nth-child(odd) {
+                margin-bottom: 25vh;
+            }
+
+            .creator:nth-child(even) {
+                margin-top: 25vh;
+            }
+
+            .big-text {
+                font-size: 25vw;
+            }
+
+            .profile-container {
+                height: 65vh;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 2rem;
+            }
+
+            .socials {
+                display: none;
+            }
+
+            /* Hide socials on mobile */
+            .big-text {
+                font-size: 28vw;
+            }
+
+            .profile-container {
+                height: 60vh;
+            }
+
+            .accent-squares {
+                width: 50vw;
+                height: 50vw;
+            }
+        }
+
+        /* ══════════════════════════════ 6. STATS SECTION ══════════════════════════════ */
+        .stats-section {
+            width: 100vw;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #011406 0%, #000c03 60%, #000501 100%);
+            /* Deep cinematic volumetric stat background */
+            position: relative;
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 14vh 3vw;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        /* Stats aurora — deep vivid green top-left (like hero orange) */
+        .stats-section::before {
+            width: 70vw;
+            height: 70vw;
+            background: #0f7a25;
+            top: -10vh;
+            left: -10vw;
+            animation-delay: -5s;
+        }
+
+        /* Stats aurora — light mint bottom-right (like hero peach) */
+        .stats-section::after {
+            width: 80vw;
+            height: 80vw;
+            background: #a8ffc2;
+            bottom: -20vh;
+            right: -10vw;
+            animation-delay: -12s;
+        }
+
+        /* Vertical list of all 3 stats */
+        .stats-inner {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* Each stat row */
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* Horizontal separator line */
+        .stat-line {
+            display: block;
+            height: 1px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.12);
+            transform-origin: left center;
+            flex-shrink: 0;
+        }
+
+        /* Number left — Label right — same line */
+        .stat-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 4vw;
+            padding: 2.2vh 0;
+            width: 100%;
+        }
+
+        /* Clip wrapper for slide-up reveal */
+        .stat-num-wrap {
+            overflow: hidden;
+            padding-top: 0.2em;
+            margin-top: -0.2em;
+            flex-shrink: 0;
+        }
+
+        .stat-num {
+            font-size: clamp(2.5rem, 5.8vw, 10rem);
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+            letter-spacing: -0.04em;
+            white-space: nowrap;
+            display: block;
+        }
+
+        .stat-suf {
+            font-size: 1em;
+            font-weight: 900;
+            vertical-align: baseline;
+            margin-left: 0.03em;
+        }
+
+        .stat-label {
+            font-size: clamp(2.5rem, 5.8vw, 10rem);
+            color: rgba(255, 255, 255, 0.28);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        /* ══════════════════════════════ 7. PRICING SECTION ══════════════════════════════ */
+        .pricing-section {
+            width: 100vw;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1f0b03 0%, #100602 60%, #050200 100%);
+            /* Deep volumetric warm amber background */
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 14vh 4vw;
+            overflow: hidden;
+        }
+
+        /* Deep orange/red aurora — left */
+        .pricing-section::before {
+            width: 60vw;
+            height: 60vw;
+            background: #c43200;
+            opacity: 0.35 !important;
+            top: -25vh;
+            left: -25vw;
+            animation-delay: -4s;
+        }
+
+        /* Warm amber glow — right */
+        .pricing-section::after {
+            width: 55vw;
+            height: 55vw;
+            background: #8a2200;
+            opacity: 0.3 !important;
+            bottom: -25vh;
+            right: -20vw;
+            animation-delay: -11s;
+        }
+
+        /* Massive background title */
+        .pricing-bg-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(10vw, 18vw, 22vw);
+            font-weight: 900;
+            color: #ffffff;
+            /* PREVIEW: 100% opacity */
+            -webkit-text-stroke: 0;
+            letter-spacing: -0.04em;
+            line-height: 0.85;
+            text-transform: uppercase;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            will-change: transform;
+        }
+
+        /* Premium fading grid overlay for pricing section */
+        .pricing-grid {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.22) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.22) 1px, transparent 1px);
+            background-size: 58px 58px;
+            mask-image: radial-gradient(ellipse 60% 55% at center,
+                    black 0%,
+                    transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 60% 55% at center,
+                    black 0%,
+                    transparent 100%);
+        }
+
+        /* TRUE glassmorphism — near-transparent so aurora bleeds through as frosted crystal */
+        .pricing-card {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.04);
+            border: none;
+            border-radius: 24px;
+            padding: clamp(2.5rem, 5vw, 4.5rem);
+            width: clamp(320px, 40vw, 540px);
+            backdrop-filter: blur(36px) saturate(140%);
+            -webkit-backdrop-filter: blur(36px) saturate(140%);
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        /* ── ANIMATED RUNNING-LIGHT BORDER ── */
+        @property --border-angle {
+            syntax: "<angle>";
+            inherits: true;
+            initial-value: 0turn;
+        }
+
+        .pricing-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1.5px;
+            background: conic-gradient(from var(--border-angle),
+                    transparent 0%,
+                    transparent 72%,
+                    rgba(255, 255, 255, 0.06) 76%,
+                    rgba(255, 255, 255, 0.55) 82%,
+                    rgba(255, 255, 255, 1) 87%,
+                    rgba(255, 255, 255, 0.55) 92%,
+                    rgba(255, 255, 255, 0.06) 96%,
+                    transparent 100%);
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 4;
+            animation: borderAngle 6s ease-in-out infinite;
+        }
+
+        @keyframes borderAngle {
+            0% {
+                --border-angle: 0turn;
+                animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+            }
+
+            50% {
+                --border-angle: 0.5turn;
+                animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+            }
+
+            100% {
+                --border-angle: 1turn;
+            }
+        }
+
+        .pricing-plan-label {
+            font-size: clamp(0.75rem, 1vw, 0.9rem);
+            font-weight: 400;
+            color: rgba(255, 255, 255, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin: 0 0 1rem 0;
+        }
+
+        /* Slot-machine price roller */
+        .price-ticker {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            margin-bottom: 0.4rem;
+        }
+
+        .price-sym {
+            font-size: clamp(1.8rem, 3.5vw, 3rem);
+            font-weight: 900;
+            color: #ffffff;
+            line-height: 1;
+            margin-top: 0.2em;
+        }
+
+        .digit-col {
+            height: clamp(3.5rem, 7vw, 6rem);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .digit-strip {
+            display: flex;
+            flex-direction: column;
+            will-change: transform;
+        }
+
+        .digit-strip span {
+            display: block;
+            height: clamp(3.5rem, 7vw, 6rem);
+            line-height: clamp(3.5rem, 7vw, 6rem);
+            font-size: clamp(3.5rem, 7vw, 6rem);
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -0.04em;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            width: 1ch;
+            /* 1ch equals the width of the '0' digit, preventing clipping while ensuring uniform columns */
+        }
+
+        .price-sep {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 900;
+            color: rgba(255, 255, 255, 1);
+            line-height: clamp(3.5rem, 7vw, 6rem);
+            align-self: flex-start;
+        }
+
+        .pricing-period {
+            font-size: clamp(0.75rem, 1vw, 0.9rem);
+            color: rgba(255, 255, 255, 1);
+            margin-bottom: 2rem;
+            display: block;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .pricing-desc {
+            font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+            color: rgba(255, 255, 255, 1);
+            line-height: 1.65;
+            margin-bottom: 2.2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 2rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+            padding: 0.85rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            color: rgba(255, 255, 255, 1);
+            letter-spacing: 0.01em;
+        }
+
+        .pricing-features li::before {
+            content: "✦";
+            font-size: 0.55rem;
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow:
+                0 0 8px rgba(255, 255, 255, 0.6),
+                0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        /* ══════════════════════════════ 8. CUSTOM FOOTER ══════════════════════════════ */
+        .site-footer {
+            background: radial-gradient(circle at center, #071702 0%, #050e02 60%, #010300 100%);
+            /* Deep cinematic volumetric footer background */
+            color: #ffffff;
+            font-family: inherit;
+            position: relative;
+            z-index: 10;
+            overflow: hidden;
+            border-top: none;
+        }
+
+        /* Vivid lime blob — left/top — mirrors hero's orange #fa4616 */
+        .site-footer::before {
+            width: 75vw;
+            height: 75vw;
+            background: #aaff00;
+            top: -20vh;
+            left: -15vw;
+            animation-delay: -2s;
+        }
+
+        /* Bright yellow-lime blob — right/bottom — mirrors hero's peach #ffcfa8 */
+        .site-footer::after {
+            width: 80vw;
+            height: 80vw;
+            background: #55cc00;
+            bottom: -25vh;
+            right: -15vw;
+            animation-delay: -9s;
+        }
+
+        .footer-container {
+            padding: 5rem 4rem 2rem 4rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Top Row - Horizontal Socials */
+        .footer-top {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 6rem;
+            width: 100%;
+            overflow: hidden;
+            /* Clips the socials above the boundary until they slide in */
+            padding-top: 0.2rem;
+            /* Small breathing room so underlines don't clip */
+        }
+
+        .footer-socials {
+            display: flex;
+            flex-direction: row;
+            gap: clamp(2.5rem, 6vw, 5rem);
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .footer-socials a.f-social {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: clamp(2rem, 3vw, 3.5rem);
+            letter-spacing: 1.5px;
+            position: relative;
+            display: inline-block;
+            transition: opacity 0.3s ease;
+            padding-bottom: 6px;
+        }
+
+        .footer-socials a.f-social::after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 1.5px;
+            bottom: 0;
+            left: 0;
+            background-color: #ffffff;
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .footer-socials a.f-social:hover::after {
+            width: 100%;
+        }
+
+        .footer-socials a.f-social:hover {
+            opacity: 0.6;
+        }
+
+        /* Middle Row */
+        .footer-middle {
+            margin-bottom: 6rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .footer-email {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(3rem, 7vw, 9rem);
+            font-weight: 500;
+            color: #ffffff;
+            text-decoration: none;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            transition: color 0.3s ease;
+        }
+
+        .footer-email:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .footer-arrow {
+            font-size: clamp(2rem, 5vw, 6rem);
+            margin-left: 1rem;
+            font-weight: 300;
+            margin-top: -0.5rem;
+        }
+
+        .footer-divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        /* Info Row */
+        .footer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 6rem;
+        }
+
+        .footer-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .big-footer-text {
+            color: rgba(255, 255, 255, 1);
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        /* Massive Banner */
+        .footer-brand-banner {
+            background-color: transparent;
+            /* Removes seam and lets footer waves blend through perfectly */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            overflow: hidden;
+            line-height: 0.75;
+            position: relative;
+            z-index: 50;
+        }
+
+        .massive-text {
+            font-size: 28vw;
+            font-weight: 900;
+            color: #ffffff;
+            /* White text */
+            letter-spacing: -0.04em;
+            white-space: nowrap;
+            margin: 0 0 -4vw 0;
+            /* Shrinks the container bottom to hug the text */
+            padding-top: 2vw;
+            padding-bottom: 0;
+            /* Removed bottom padding */
+            text-transform: uppercase;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media (max-width: 1024px) {
+            .footer-info {
+                flex-direction: column;
+                align-items: center;
+                gap: 2rem;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .footer-container {
+                padding: 3rem 1.5rem 2rem;
+                overflow-x: hidden;
+            }
+
+            .footer-email {
+                font-size: clamp(1.2rem, 4.5vw, 2rem);
+                word-break: break-all;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                gap: 0.3rem;
+                line-height: 1.3;
+            }
+
+            .footer-arrow {
+                font-size: clamp(1rem, 3vw, 1.5rem);
+                align-self: center;
+            }
+
+            .footer-middle {
+                margin-bottom: 3rem;
+                width: 100%;
+            }
+
+            .footer-info {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 3rem;
+                text-align: center;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+           === RESPONSIVE STYLES ===
+           Breakpoints: 320 / 375 / 425 / 768 / 1024 / 1440 / 2560px
+           Rules here extend (never remove) the existing media blocks above.
+        ══════════════════════════════════════════════════════════════ */
+
+        /* ─────────────────────────────────────────
+           Laptop L  (≥ 1440px)
+        ───────────────────────────────────────── */
+        @media (min-width: 1440px) {
+            .hero {
+                padding: 2.5rem 5rem;
+            }
+
+            /* 80px horizontal */
+            .stats-section {
+                padding: 14vh 5vw;
+            }
+
+            .pricing-section {
+                padding: 14vh 6vw;
+            }
+
+            /* ~86px at 1440px */
+        }
+
+        /* ─────────────────────────────────────────
+           4K  (≥ 2560px)
+        ───────────────────────────────────────── */
+        @media (min-width: 2560px) {
+            .hero {
+                padding: 3rem 6rem;
+            }
+
+            nav a {
+                font-size: 1.8rem;
+            }
+
+            nav ul {
+                gap: 1.1rem;
+            }
+
+            .section-two,
+            .section-three,
+            .section-four {
+                transform: translateZ(0);
+                will-change: transform;
+            }
+
+            .creator,
+            .video-wrapper,
+            .short-video-wrapper,
+            .creator-title span,
+            .epic-title span,
+            .viral-title span {
+                will-change: transform, opacity, filter;
+            }
+
+            .stats-section {
+                padding: 14vh 8vw;
+            }
+
+            .pricing-section {
+                padding: 14vh 10vw;
+            }
+
+            .footer-container {
+                padding: 8rem 8rem 3rem;
+                max-width: 2400px;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           Tablet / Mobile  (≤ 768px)
+           Adds to the existing 768px rules above.
+           KEY CHANGES vs desktop:
+           • GSAP horizontal pins are disabled in JS for this breakpoint —
+             sections become normal vertical-flow content.
+           • Video / creator grids turn into native-scroll containers.
+        ───────────────────────────────────────── */
+        @media (max-width: 768px) {
+
+            /* ── iOS Safari dynamic viewport fix ── */
+            .hero {
+                height: 100svh;
+                min-height: 100svh;
+            }
+
+            /* ── DYNAMIC BACKGROUND MOBILE FIX (ALL SECTIONS) ── */
+            .hero::before,
+            .hero::after,
+            .section-two::before,
+            .section-two::after,
+            .section-three::before,
+            .section-three::after,
+            .section-four::before,
+            .section-four::after {
+                width: 160vw !important;
+                height: 160vw !important;
+                filter: blur(80px) !important;
+            }
+
+            .hero::before,
+            .section-two::before,
+            .section-three::before,
+            .section-four::before {
+                top: -10vh !important;
+                left: -30vw !important;
+            }
+
+            .hero::after,
+            .section-two::after,
+            .section-three::after,
+            .section-four::after {
+                bottom: -15vh !important;
+                right: -30vw !important;
+            }
+
+            /* ── HERO REDESIGN FOR MOBILE ── */
+            .socials {
+                position: absolute;
+                top: 15dvh;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 1.5rem;
+                width: auto;
+            }
+
+            .socials a {
+                font-size: 1rem;
+            }
+
+            .big-text-container {
+                top: 26dvh;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+            }
+
+            .big-text {
+                font-size: 30vw;
+            }
+
+            .profile-container {
+                height: 52dvh;
+                bottom: 0;
+            }
+
+            /* Sections grow with content instead of being locked to viewport */
+            .section-two,
+            .section-three,
+            .section-four {
+                height: auto;
+                min-height: 100svh;
+                overflow: hidden;
+                margin-top: 0 !important;
+            }
+
+            .stats-section {
+                min-height: 100svh;
+            }
+
+            .pricing-section {
+                min-height: 100svh;
+            }
+
+            /* Content wrappers no longer need a fixed 100vh height */
+            .green-content {
+                height: auto;
+                min-height: 100svh;
+                padding-bottom: 3rem;
+                justify-content: flex-start;
+            }
+
+            .purple-content,
+            .blue-content {
+                height: auto;
+                min-height: 100svh;
+                padding-bottom: 3rem;
+
+            }
+
+            /* ── Nav ── */
+            header {
+                top: 1.5rem;
+                right: 1.5rem;
+                width: calc(100% - 3rem);
+            }
+
+            nav a {
+                font-size: 1rem;
+            }
+
+            nav ul {
+                gap: 0.6rem;
+            }
+
+            /* ── Section Two Mobile ZigZag Redesign ── */
+            .green-text-wrapper {
+                position: relative;
+                top: 0;
+                padding-top: 15vh;
+                width: 100vw;
+            }
+
+            .creator-title {
+                display: block;
+                text-align: center;
+                font-size: 90vw !important;
+                line-height: 0.82;
+                white-space: nowrap;
+            }
+
+            .creator-scroll-grid {
+                width: 100%;
+                padding: 18vh 0 10vh 0;
+                overflow: visible;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+                margin-top: 0;
+                height: auto !important;
+                /* Overrides the inline style from JS if any */
+            }
+
+            .creator-scroll-grid::before,
+            .creator-scroll-grid::after {
+                display: none;
+            }
+
+            .creator {
+                width: 48vw !important;
+                height: 48vw !important;
+                max-width: none !important;
+                max-height: none !important;
+                margin-bottom: -15vw !important;
+                /* Interlock vertically */
+                flex: none;
+                border: none !important;
+                transform: none !important;
+                /* Destroy scaling distortion */
+            }
+
+            .creator:last-child {
+                margin-bottom: 20vw !important;
+            }
+
+            .creator:nth-child(odd) {
+                align-self: flex-start;
+                margin-left: 6vw !important;
+            }
+
+            .creator:nth-child(even) {
+                align-self: flex-end;
+                margin-right: 6vw !important;
+            }
+
+            /* ── Long-form video grid — vertical stack ── */
+            .long-form-grid {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                width: 86vw;
+                height: auto !important;
+                margin: 5vh auto 2rem;
+                padding: 0;
+                gap: 1.5rem;
+            }
+
+            .video-wrapper {
+                width: 100%;
+                height: auto;
+                flex: none;
+            }
+
+            /* ── Short-form video grid — native horizontal touch-scroll ── */
+            .short-form-grid {
+                width: 100%;
+                padding: 0 1rem;
+                gap: 1rem;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                margin-top: 6vh;
+                height: auto;
+            }
+
+            .short-form-grid::-webkit-scrollbar {
+                display: none;
+            }
+
+            .short-video-wrapper {
+                flex: 0 0 auto;
+                height: 55dvh;
+                width: auto;
+                /* aspect-ratio: 9/16 determines width */
+            }
+
+            /* Background section titles — huge layout */
+            .epic-text-wrapper,
+            .blue-text-wrapper {
+                position: relative;
+                top: 2%;
+                width: 100vw;
+                padding: 0;
+            }
+
+            .epic-title,
+            .viral-title {
+                font-size: 38vw !important;
+                line-height: 0.85;
+                margin: 0;
+                white-space: nowrap;
+            }
+
+            .epic-title span:first-child,
+            .viral-title span:first-child {
+                display: block;
+                text-align: left;
+                transform: translateX(-3vw);
+            }
+
+            .epic-title span:last-child,
+            .viral-title span:last-child {
+                display: block;
+                text-align: right;
+                transform: translateX(3vw);
+                margin-top: -3vw;
+            }
+
+            /* ── Stats — prevent overflow of long label text ── */
+            .stat-num,
+            .stat-label {
+                font-size: clamp(1.6rem, 6.5vw, 4.5rem);
+            }
+
+            .stat-row {
+                gap: 2vw;
+            }
+
+            .stats-section {
+                padding: 10vh max(1rem, 3vw);
+            }
+
+            /* ── Pricing ── */
+            .pricing-section {
+                padding: 10vh max(1rem, 4vw);
+            }
+
+            .pricing-card {
+                width: min(90vw, 480px);
+            }
+
+            /* ── Footer — 44×44px tap targets (WCAG 2.5.5) ── */
+            .footer-socials a.f-social {
+                min-width: 44px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.4rem 0.5rem;
+            }
+
+            .footer-socials {
+                gap: 1.5rem;
+            }
+
+            /* ── Decorative elements — scale down on mobile ── */
+            .accent-squares {
+                top: 50% !important;
+                bottom: auto !important;
+                width: 55vw !important;
+                height: 55vw !important;
+                display: flex !important;
+                opacity: 1 !important;
+            }
+
+            .hero-transition-lines,
+            .transition-lines,
+            .purple-transition-lines,
+            .blue-transition-lines {
+                display: none !important;
+            }
+
+            /* --- MOBILE NAV --- */
+            header {
+                top: 2rem !important;
+                right: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                justify-content: center !important;
+                z-index: 110;
+            }
+
+            nav {
+                position: static;
+                width: auto;
+                height: auto;
+                background: transparent;
+                backdrop-filter: none;
+                opacity: 1;
+                pointer-events: auto;
+                display: block;
+            }
+
+            nav ul {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 0.8rem !important;
+            }
+
+            nav a {
+                font-size: 1rem !important;
+                letter-spacing: 2px;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           Mobile L  (≤ 425px)
+        ───────────────────────────────────────── */
+        @media (max-width: 425px) {
+            .hero {
+                padding: 1.2rem 1rem;
+            }
+
+            header {
+                top: 1.2rem;
+                right: 1rem;
+                width: calc(100% - 2rem);
+            }
+
+            nav a {
+                font-size: 0.9rem;
+                letter-spacing: 0.5px;
+            }
+
+            nav ul {
+                gap: 0.5rem;
+            }
+
+            /* Curtain overlay brand text — prevent overflow at 5 chars × 6rem each */
+            .brand-text {
+                font-size: clamp(4rem, 13vw, 16rem);
+            }
+
+            /* Stats */
+            .stat-num,
+            .stat-label {
+                font-size: clamp(1.5rem, 5.8vw, 4rem);
+            }
+
+            .stat-row {
+                gap: 1.5vw;
+                padding: 1.5vh 0;
+            }
+
+            .stats-section {
+                padding: 8vh 1rem;
+            }
+
+            /* Pricing */
+            .pricing-section {
+                padding: 8vh 1rem;
+            }
+
+            .pricing-card {
+                width: calc(100vw - 2rem);
+                padding: clamp(1.5rem, 4vw, 3rem);
+            }
+
+            /* Footer */
+            .footer-container {
+                padding: 3rem 1rem 1.5rem;
+            }
+
+            .footer-email {
+                font-size: clamp(1.6rem, 5.5vw, 3.5rem);
+            }
+
+            .massive-text {
+                font-size: 30vw;
+            }
+
+            /* Reduce transition-line opacity on small screens — still visible but less busy */
+            .hero-transition-lines {
+                opacity: 0.5;
+            }
+
+            /* PERFORMANCE CRITICAL: Remove heavy drop shadows on mobile to unlock buttery 60-120 FPS */
+            .hero-line,
+            .line,
+            .purple-line,
+            .blue-line {
+                filter: none !important;
+                box-shadow: none !important;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           Mobile M  (≤ 375px)
+        ───────────────────────────────────────── */
+        @media (max-width: 375px) {
+            .hero {
+                padding: 1rem;
+            }
+
+            nav a {
+                font-size: 0.8rem;
+            }
+
+            /* Stats */
+            .stat-num,
+            .stat-label {
+                font-size: clamp(1.3rem, 5.5vw, 3.5rem);
+            }
+
+            /* Pricing digit roller — scale down height so columns don't clip */
+            .digit-col {
+                height: clamp(3rem, 7vw, 5rem);
+            }
+
+            .digit-strip span {
+                height: clamp(3rem, 7vw, 5rem);
+                line-height: clamp(3rem, 7vw, 5rem);
+                font-size: clamp(3rem, 7vw, 5rem);
+            }
+
+            .price-sym {
+                font-size: clamp(1.5rem, 3vw, 2.5rem);
+            }
+
+            .footer-email {
+                font-size: clamp(1.4rem, 5vw, 3rem);
+            }
+
+            .footer-container {
+                padding: 2.5rem 1rem 1.5rem;
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           Mobile S  (≤ 320px)
+        ───────────────────────────────────────── */
+        @media (max-width: 320px) {
+            .hero {
+                padding: 0.75rem 1rem;
+            }
+
+            /* 16px sides (rule 10) */
+            nav a {
+                font-size: 0.75rem;
+                letter-spacing: 0;
+            }
+
+            /* Stats */
+            .stat-num,
+            .stat-label {
+                font-size: clamp(1.2rem, 5vw, 3rem);
+            }
+
+            .stat-row {
+                gap: 1vw;
+                padding: 1.2vh 0;
+            }
+
+            .stats-section {
+                padding: 6vh 1rem;
+            }
+
+            /* Pricing — card must fit 288px content area at 320px */
+            .pricing-section {
+                padding: 6vh 1rem;
+            }
+
+            .pricing-card {
+                width: 100%;
+                padding: 1.2rem 1rem;
+            }
+
+            .digit-col {
+                height: clamp(2.5rem, 7vw, 4rem);
+            }
+
+            .digit-strip span {
+                height: clamp(2.5rem, 7vw, 4rem);
+                line-height: clamp(2.5rem, 7vw, 4rem);
+                font-size: clamp(2.5rem, 7vw, 4rem);
+            }
+
+            .footer-container {
+                padding: 2rem 1rem 1.5rem;
+            }
+
+            .footer-email {
+                font-size: clamp(1.2rem, 4.5vw, 2.5rem);
+            }
+
+            .massive-text {
+                font-size: 28vw;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════════════
+           === MOBILE RESPONSIVE ===
+           All mobile-specific overrides live in this block.
+           Nothing above is modified — only additive rules below.
+        ══════════════════════════════════════════════════════════════ */
+
+        /* ── Touch / no-hover devices: hide cursor, remove sticky hover states ── */
+        @media (hover: none) {
+
+            .custom-cursor,
+            .cursor,
+            .cursor-follower,
+            [class*="cursor"] {
+                display: none !important;
+            }
+
+            body {
+                cursor: auto !important;
+            }
+
+            a,
+            button,
+            [onclick],
+            .video-wrapper,
+            .short-video-wrapper,
+            .creator {
+                cursor: pointer !important;
+            }
+
+            nav a::after {
+                transition: none;
+            }
+
+            .socials a::after {
+                transition: none;
+            }
+
+            .creator::before {
+                display: none;
+            }
+
+            .creator .creator-arrow-svg {
+                display: none;
+            }
+
+            .creator::after {
+                display: none;
+            }
+
+            .footer-socials a.f-social::after {
+                transition: none;
+            }
+        }
+
+        /* ══════════════════════════════════════════════════════
+           PHONE LAYOUT (≤ 768px) — COMPREHENSIVE
+           Sections stack vertically, content fills the screen,
+           titles are clearly visible, grids wrap properly.
+        ══════════════════════════════════════════════════════ */
+        @media (max-width: 768px) {
+
+            /* ── MOBILE SCROLL OPTIMIZATION ── */
+            .top-glass-blur {
+                display: none !important;
+            }
+
+            /* ── GLOBAL ── */
+            html,
+            body {
+                overflow-x: hidden !important;
+                max-width: 100vw;
+            }
+
+            /* ══ HERO ══ */
+            .hero {
+                height: 100svh;
+                min-height: 100svh;
+                padding: 1.5rem clamp(16px, 5vw, 80px) !important;
+                max-width: 100vw;
+            }
+
+            .big-text {
+                font-size: clamp(48px, 16vw, 160px) !important;
+                white-space: normal !important;
+                word-break: break-word;
+                max-width: 100%;
+            }
+
+            .big-text-container {
+                max-width: 100vw;
+                overflow: hidden;
+            }
+
+            .profile-container {
+                left: 50% !important;
+                bottom: 0px !important;
+                height: 55dvh;
+            }
+
+            .profile-img {
+                max-width: 85vw;
+                height: auto;
+                width: auto;
+                max-height: 100%;
+            }
+
+            /* ── Header & Nav ── */
+            header {
+                display: none !important;
+            }
+
+            nav ul {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.3rem 0.8rem;
+            }
+
+            nav a {
+                font-size: clamp(0.8rem, 2.5vw, 1.2rem) !important;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 6px 10px;
+                letter-spacing: 0.5px;
+            }
+
+            .socials {
+                display: none !important;
+            }
+
+            /* Accent shapes — hide on phones for cleaner look */
+            .accent-squares,
+            .purple-hexagons,
+            .accent-hexagons,
+            .green-squares {
+                display: none;
+            }
+
+            /* ══════════════════════════════════════════
+               SECTION TWO — CREATORS ("TRUSTED BY PROS")
+            ══════════════════════════════════════════ */
+            .section-two {
+                margin-top: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
+
+            .green-content {
+                height: auto !important;
+                min-height: auto !important;
+                padding: 4rem 1.2rem 3rem !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            /* Title — make it VISIBLE, static flow, centered */
+            .green-text-wrapper {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                width: 100%;
+                padding: 0 !important;
+                margin-bottom: 2rem;
+                display: flex;
+                justify-content: center;
+                pointer-events: none;
+            }
+
+            .creator-title {
+                font-size: clamp(3rem, 16vw, 6rem) !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+                color: rgba(255, 255, 255, 0.12) !important;
+                line-height: 0.8 !important;
+                letter-spacing: -0.5vw !important;
+            }
+
+            .creator-title span:first-child {
+                display: inline-block !important;
+                margin-right: 12vw !important;
+            }
+
+            .creator-title span:last-child {
+                display: inline-block !important;
+                margin-left: 12vw !important;
+            }
+
+            .stagger-left {
+                margin-right: 0 !important;
+            }
+
+            .stagger-right {
+                margin-left: 0 !important;
+            }
+
+            /* Creator grid — 3 columns wrapped, centered */
+            .creator-scroll-grid {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center;
+                align-items: center;
+                gap: 1rem !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                margin-top: 0 !important;
+                overflow: visible !important;
+            }
+
+            .creator-scroll-grid::before,
+            .creator-scroll-grid::after {
+                display: none !important;
+            }
+
+            .creator {
+                width: 26vw !important;
+                height: 26vw !important;
+                min-width: 80px !important;
+                min-height: 80px !important;
+                max-width: 120px !important;
+                max-height: 120px !important;
+                flex: 0 0 auto;
+            }
+
+            .creator:nth-child(odd) {
+                margin-bottom: 0 !important;
+            }
+
+            .creator:nth-child(even) {
+                margin-top: 0 !important;
+            }
+
+            /* ══════════════════════════════════════════
+               SECTION THREE — LONG FORM VIDEOS
+            ══════════════════════════════════════════ */
+            .section-three {
+                margin-top: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
+
+            .purple-content {
+                height: auto !important;
+                min-height: auto !important;
+                padding: 4rem 1.2rem 3rem !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            /* Title — visible, static flow */
+            .epic-text-wrapper {
+                position: relative !important;
+                top: auto !important;
+                right: auto !important;
+                width: 100%;
+                padding: 0 !important;
+                margin-bottom: 3.5rem;
+                display: flex;
+                justify-content: center;
+            }
+
+            .epic-title {
+                font-size: clamp(3rem, 16vw, 6rem) !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+                color: rgba(255, 255, 255, 0.12) !important;
+                line-height: 0.8 !important;
+                letter-spacing: -0.5vw !important;
+            }
+
+            .epic-title span:first-child {
+                display: inline-block !important;
+                margin-right: 12vw !important;
+            }
+
+            .epic-title span:last-child {
+                display: inline-block !important;
+                margin-left: 12vw !important;
+            }
+
+            /* Long-form grid — vertical stack full width */
+            .long-form-grid {
+                flex-direction: column !important;
+                flex-wrap: nowrap !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                gap: 1rem !important;
+            }
+
+            .long-form-grid::before,
+            .long-form-grid::after {
+                display: none !important;
+            }
+
+            .video-wrapper {
+                width: 90% !important;
+                margin: 0 auto !important;
+                height: auto !important;
+                flex: none !important;
+                border-radius: 12px;
+                aspect-ratio: 16 / 9;
+            }
+
+            /* ══════════════════════════════════════════
+               SECTION FOUR — SHORT FORM VIDEOS
+            ══════════════════════════════════════════ */
+            .section-four {
+                margin-top: 0 !important;
+                padding: 0 !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
+
+            .blue-content {
+                height: auto !important;
+                min-height: auto !important;
+                padding: 4rem 1.2rem 3rem !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            /* Title — visible, static flow */
+            .blue-text-wrapper {
+                position: relative !important;
+                top: auto !important;
+                left: auto !important;
+                width: 100%;
+                padding: 0 !important;
+                margin-bottom: 3.5rem;
+                display: flex;
+                justify-content: center;
+            }
+
+            .viral-title {
+                font-size: clamp(3rem, 16vw, 6rem) !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+                color: rgba(255, 255, 255, 0.12) !important;
+                line-height: 0.8 !important;
+                letter-spacing: -0.5vw !important;
+            }
+
+            .viral-title span:first-child {
+                display: inline-block !important;
+                margin-right: 12vw !important;
+            }
+
+            .viral-title span:last-child {
+                display: inline-block !important;
+                margin-left: 12vw !important;
+            }
+
+            /* Short-form grid — 2 columns wrapped, fills screen nicely */
+            .short-form-grid {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 0.75rem !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                margin-top: 0 !important;
+                overflow: visible !important;
+            }
+
+            .short-form-grid::before,
+            .short-form-grid::after {
+                display: none !important;
+            }
+
+            .short-video-wrapper {
+                flex: 0 0 calc(50% - 0.5rem) !important;
+                height: auto !important;
+                aspect-ratio: 9 / 16;
+                border-radius: 12px;
+            }
+
+            /* ══ STATS ══ */
+            .stats-section {
+                padding: 4rem clamp(1.5rem, 4vw, 3rem) !important;
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+
+            .stats-section::before {
+                width: 160vw !important;
+                height: 160vw !important;
+            }
+
+            .stats-section::after {
+                width: 180vw !important;
+                height: 180vw !important;
+            }
+
+            .stats-inner {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 1.5rem !important;
+                justify-content: center !important;
+            }
+
+            .stat-num {
+                font-size: clamp(4rem, 20vw, 8rem) !important;
+                line-height: 1 !important;
+            }
+
+            .stat-label {
+                font-size: clamp(2rem, 9vw, 4rem) !important;
+                color: rgba(255, 255, 255, 0.45) !important;
+                line-height: 1.1 !important;
+            }
+
+            .stat-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0rem !important;
+                padding: 2vh 0 !important;
+            }
+
+            /* ══ PRICING ══ */
+            .pricing-section {
+                padding: 4rem 1rem !important;
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+
+            .pricing-section::before {
+                width: 150vw !important;
+                height: 150vw !important;
+            }
+
+            .pricing-section::after {
+                width: 150vw !important;
+                height: 150vw !important;
+            }
+
+            .pricing-card {
+                width: min(92vw, 480px) !important;
+                transform: scale(0.85) !important;
+                transform-origin: center center !important;
+                margin-top: 5vh !important;
+            }
+
+            .pricing-bg-title {
+                position: absolute !important;
+                top: 12vh !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                font-size: 16vw !important;
+                max-width: 100vw;
+                overflow: hidden;
+                z-index: 10 !important;
+            }
+
+            /* ══ FOOTER ══ */
+            .site-footer {
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+
+            .site-footer::before {
+                width: 150vw !important;
+                height: 150vw !important;
+            }
+
+            .site-footer::after {
+                width: 150vw !important;
+                height: 150vw !important;
+            }
+
+            .footer-container {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-evenly !important;
+                margin: 0 !important;
+                padding-top: 5vh !important;
+            }
+
+            .footer-email {
+                font-size: clamp(1.8rem, 6.5vw, 4rem) !important;
+                width: 100% !important;
+                text-align: center !important;
+                justify-content: center !important;
+            }
+
+            .footer-info {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 1.5vh !important;
+            }
+
+            .footer-info .f-info:nth-child(2) {
+                order: 1 !important;
+            }
+
+            .footer-info .f-info:nth-child(3) {
+                order: 2 !important;
+            }
+
+            .footer-info .f-info:nth-child(1) {
+                order: 3 !important;
+                opacity: 0.6 !important;
+                margin-top: 2vh !important;
+            }
+
+            .footer-socials a.f-social {
+                min-width: 44px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .massive-text {
+                font-size: clamp(18vw, 25vw, 30vw) !important;
+                max-width: 100vw;
+                margin-bottom: -4vw !important;
+                /* Pull flush to screen edge */
+            }
+
+            /* ══ PERFORMANCE ══ */
+            .pricing-bg-title {
+                will-change: auto;
+            }
+
+            /* Reduce aurora blob sizes */
+            .hero::before,
+            .hero::after,
+            .section-two::before,
+            .section-two::after,
+            .section-three::before,
+            .section-three::after,
+            .section-four::before,
+            .section-four::after,
+            .pricing-section::before,
+            .pricing-section::after,
+            .stats-section::before,
+            .stats-section::after,
+            .site-footer::before,
+            .site-footer::after {
+                width: 50vw;
+                height: 50vw;
+                filter: blur(80px);
+                animation-duration: 30s;
+            }
+
+            /* Reduce decorative line opacity */
+            .hero-transition-lines {
+                opacity: 0.3;
+            }
+
+            .transition-lines,
+            .purple-transition-lines,
+            .blue-transition-lines {
+                opacity: 0.2;
+            }
+
+            /* Absolute gap seal for `.hero` on mobile */
+            .section-two,
+            .section-three,
+            .section-four {
+                margin-top: 0 !important;
+            }
+
+            .section-two {
+                padding-top: 5vh !important;
+            }
+        }
+
+        /* end ≤ 768px */
+
+        /* ── TABLET (769px - 1024px) ── */
+        @media (min-width: 769px) and (max-width: 1024px) {
+
+            html,
+            body {
+                overflow-x: hidden !important;
+                max-width: 100vw;
+            }
+
+            /* Remove section overlaps on tablet too */
+            .section-two,
+            .section-three,
+            .section-four {
+                margin-top: -5vh;
+            }
+
+            /* Sections can grow */
+            .section-two,
+            .section-three,
+            .section-four {
+                min-height: auto;
+                height: auto;
+            }
+
+            .green-content,
+            .purple-content,
+            .blue-content {
+                height: auto;
+                min-height: 80vh;
+                padding-bottom: 3rem;
+            }
+
+            /* Titles clearly visible */
+            .creator-title,
+            .epic-title,
+            .viral-title {
+                font-size: clamp(4rem, 10vw, 8rem) !important;
+                white-space: normal !important;
+            }
+
+            .stagger-left {
+                margin-right: 4vw;
+            }
+
+            .stagger-right {
+                margin-left: 4vw;
+            }
+
+            /* Nav */
+            header {
+                flex-direction: row;
+            }
+
+            nav a {
+                font-size: clamp(0.95rem, 1.8vw, 1.25rem) !important;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            /* Socials shrink */
+            .socials a {
+                font-size: 1.4rem;
+            }
+
+            .socials {
+                left: 1.5rem;
+                gap: 1rem;
+            }
+
+            /* ── CLONED LOGIC FULLY SCALED FOR IPAD ── */
+
+            /* ══ STATS ══ */
+            .stats-section {
+                padding: 4rem clamp(2rem, 5vw, 4rem) !important;
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+
+            .stats-section::before,
+            .stats-section::after {
+                width: 120vw !important;
+                height: 120vw !important;
+            }
+
+            .stats-inner {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 3vh !important;
+                justify-content: center !important;
+            }
+
+            .stat-num {
+                font-size: clamp(6rem, 16vw, 10rem) !important;
+                line-height: 1 !important;
+            }
+
+            .stat-label {
+                font-size: clamp(3rem, 7vw, 5rem) !important;
+                color: rgba(255, 255, 255, 0.45) !important;
+                line-height: 1.1 !important;
+            }
+
+            .stat-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0rem !important;
+                padding: 3vh 0 !important;
+            }
+
+            /* ══ PRICING ══ */
+            .pricing-section {
+                padding: 4rem 1rem !important;
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+            }
+
+            .pricing-section::before,
+            .pricing-section::after {
+                width: 120vw !important;
+                height: 120vw !important;
+            }
+
+            .pricing-card {
+                width: min(85vw, 600px) !important;
+                transform: scale(0.9) !important;
+                transform-origin: center center !important;
+                margin-top: 5vh !important;
+            }
+
+            .pricing-bg-title {
+                position: absolute !important;
+                top: 8vh !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                font-size: 14vw !important;
+                max-width: 100vw;
+                overflow: hidden;
+                z-index: 10 !important;
+            }
+
+            /* ══ FOOTER ══ */
+            .site-footer {
+                min-height: 100svh !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+
+            .site-footer::before,
+            .site-footer::after {
+                width: 120vw !important;
+                height: 120vw !important;
+            }
+
+            .footer-container {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-evenly !important;
+                margin: 0 !important;
+                padding-top: 5vh !important;
+            }
+
+            .footer-email {
+                font-size: clamp(2rem, 5.5vw, 4.5rem) !important;
+                width: 100% !important;
+                text-align: center !important;
+                justify-content: center !important;
+            }
+
+            .footer-info {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                text-align: center !important;
+                gap: 2vh !important;
+            }
+
+            .footer-info .f-info:nth-child(2) {
+                order: 1 !important;
+            }
+
+            .footer-info .f-info:nth-child(3) {
+                order: 2 !important;
+            }
+
+            .footer-info .f-info:nth-child(1) {
+                order: 3 !important;
+                opacity: 0.6 !important;
+                margin-top: 3vh !important;
+            }
+
+            .footer-socials a.f-social {
+                min-width: 44px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .massive-text {
+                font-size: clamp(18vw, 25vw, 30vw) !important;
+                max-width: 100vw;
+                margin-bottom: -4vw !important;
+                /* Pull flush to screen edge */
+            }
+
+            /* Performance */
+            .hero::before,
+            .hero::after,
+            .section-two::before,
+            .section-two::after,
+            .section-three::before,
+            .section-three::after,
+            .section-four::before,
+            .section-four::after {
+                width: 55vw;
+                height: 55vw;
+                filter: blur(90px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .noise-overlay {
+                display: none;
+            }
+
+            .hero-transition-lines {
+                display: none;
+            }
+
+            .vignette-overlay {
+                display: none;
+            }
+
+            .pattern-overlay {
+                display: none;
+            }
+
+            .hero::before,
+            .hero::after,
+            .section-two::before,
+            .section-two::after,
+            .section-three::before,
+            .section-three::after,
+            .section-four::before,
+            .section-four::after,
+            .pricing-section::before,
+            .pricing-section::after,
+            .stats-section::before,
+            .stats-section::after,
+            .site-footer::before,
+            .site-footer::after {
+                animation: none;
+                filter: blur(60px);
+                opacity: 0.4;
+                pointer-events: none !important;
+            }
+
+            body {
+                transition: opacity 0.3s ease;
+            }
+
+            .top-glass-blur {
+                backdrop-filter: blur(6px);
+                -webkit-backdrop-filter: blur(6px);
+                height: 10vh;
+            }
+        }
+
+        /* === END MOBILE RESPONSIVE === */
+    </style>
+
+    <!-- INSTANT scroll-to-top: fires before body renders, zero delay -->
+    <script>
+        if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        window.scrollTo(0, 0);
+
+        // Track external link clicks so we don't hijack mailto/tel/youtube
+        window.__extClick = false;
+        document.addEventListener("click", function (e) {
+            var a = e.target.closest ? e.target.closest("a") : null;
+            if (a) {
+                var h = a.getAttribute("href") || "";
+                if (h.indexOf("mailto:") === 0 || h.indexOf("tel:") === 0 || a.target === "_blank" || h.indexOf("youtube.com") !== -1) {
+                    window.__extClick = true;
+                    setTimeout(function () { window.__extClick = false; }, 2000);
+                }
+            }
+        });
+        window.addEventListener("beforeunload", function () {
+            if (!window.__extClick) window.scrollTo(0, 0);
+        });
+        window.addEventListener("pageshow", function (e) {
+            if (!window.__extClick && !e.persisted) window.scrollTo(0, 0);
+        });
+    </script>
+</head>
+
+<body>
+    <!-- CINEMATIC DEPTH METRICS -->
+    <div class="pattern-overlay"></div>
+    <div class="noise-overlay"></div>
+    <div class="vignette-overlay"></div>
+
+    <!-- Triple Column Cinematic Curtain Wipe -->
+    <div id="nav-curtain">
+        <div class="curtain-col"></div>
+        <div class="curtain-col"></div>
+        <div class="curtain-col"></div>
+        <div class="brand-overlay">
+            <div class="brand-text" id="brandText">
+                <span class="brand-letter-wrap"><span class="brand-letter">C</span></span>
+                <span class="brand-letter-wrap"><span class="brand-letter">O</span></span>
+                <span class="brand-letter-wrap"><span class="brand-letter">M</span></span>
+                <span class="brand-letter-wrap"><span class="brand-letter">Z</span></span>
+                <span class="brand-letter-wrap"><span class="brand-letter">E</span></span>
+                <div class="brand-line" id="brandLine"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Luxurious Top Blur Transition -->
+    <div class="top-glass-blur"></div>
+
+    <div class="custom-cursor"></div>
+
+    <!-- Hero Transition Lines effect (Elevated above all to fall IN FRONT of hero and green section) -->
+    <div class="hero-transition-lines">
+        <div class="hero-line hl1"></div>
+        <div class="hero-line hl2"></div>
+        <div class="hero-line hl3"></div>
+        <div class="hero-line hl4"></div>
+        <div class="hero-line hl5"></div>
+        <div class="hero-line hl6"></div>
+        <div class="hero-line hl7"></div>
+        <div class="hero-line hl8"></div>
+        <div class="hero-line hl9"></div>
+        <div class="hero-line hl10"></div>
+        <div class="hero-line hl11"></div>
+        <div class="hero-line hl12"></div>
+    </div>
+
+    <!-- === 1. HERO SECTION === -->
+    <section class="hero">
+        <header>
+            <div class="logo"></div>
+            <nav>
+                <ul></ul>
+            </nav>
+        </header>
+
+        <div class="socials"></div>
+
+        <div class="big-text-container">
+            <h1 class="big-text">COMZE</h1>
+        </div>
+
+        <div class="accent-squares">
+            <div class="square square-1"></div>
+            <div class="square square-2"></div>
+            <div class="square square-3"></div>
+            <div class="square square-4"></div>
+        </div>
+
+        <div class="profile-container">
+            <img src="profile.jpg" class="profile-img" alt="Video Editor Profile" />
+        </div>
+    </section>
+
+    <!-- === 2. SECTION TWO (CREATORS) === -->
+    <section class="section-two">
+        <div class="green-squares">
+            <div class="g-square g-square-1"></div>
+            <div class="g-square g-square-2"></div>
+            <div class="g-square g-square-3"></div>
+        </div>
+
+        <!-- Transition Lines effect -->
+        <div class="transition-lines">
+            <!-- 18 lines for a dense, cinematic hyper-warp effect -->
+            <div class="line l1"></div>
+            <div class="line l2"></div>
+            <div class="line l3"></div>
+            <div class="line l4"></div>
+            <div class="line l5"></div>
+            <div class="line l6"></div>
+            <div class="line l7"></div>
+            <div class="line l8"></div>
+            <div class="line l9"></div>
+            <div class="line l10"></div>
+            <div class="line l11"></div>
+            <div class="line l12"></div>
+            <div class="line l13"></div>
+            <div class="line l14"></div>
+            <div class="line l15"></div>
+            <div class="line l16"></div>
+            <div class="line l17"></div>
+            <div class="line l18"></div>
+        </div>
+
+        <div class="green-content">
+            <div class="green-text-wrapper">
+                <h2 class="creator-title">
+                    <span class="stagger-left"
+                        style="display: inline-block; will-change: transform">TRUSTED</span><br />
+                    <span class="stagger-right" style="display: inline-block; will-change: transform">BY PROS</span>
+                </h2>
+            </div>
+
+            <div class="creator-scroll-grid"></div>
+        </div>
+    </section>
+
+    <!-- === 3. SECTION THREE (LONG FORM) === -->
+    <section class="section-three">
+        <!-- Animated Geometric Ambient Element -->
+        <div class="purple-hexagons">
+            <div class="p-hexagon p-hexagon-1"></div>
+            <div class="p-hexagon p-hexagon-2"></div>
+            <div class="p-hexagon p-hexagon-3"></div>
+        </div>
+
+        <!-- Purple Transition Lines effect -->
+        <div class="purple-transition-lines">
+            <div class="purple-line pl1"></div>
+            <div class="purple-line pl2"></div>
+            <div class="purple-line pl3"></div>
+            <div class="purple-line pl4"></div>
+            <div class="purple-line pl5"></div>
+            <div class="purple-line pl6"></div>
+            <div class="purple-line pl7"></div>
+            <div class="purple-line pl8"></div>
+            <div class="purple-line pl9"></div>
+            <div class="purple-line pl10"></div>
+            <div class="purple-line pl11"></div>
+            <div class="purple-line pl12"></div>
+            <div class="purple-line pl13"></div>
+            <div class="purple-line pl14"></div>
+            <div class="purple-line pl15"></div>
+            <div class="purple-line pl16"></div>
+            <div class="purple-line pl17"></div>
+            <div class="purple-line pl18"></div>
+        </div>
+
+        <div class="purple-content">
+            <div class="epic-text-wrapper">
+                <h2 class="epic-title">
+                    <span class="stagger-left">LONG</span><br />
+                    <span>FORM</span>
+                </h2>
+            </div>
+
+            <div class="long-form-grid"></div>
+        </div>
+    </section>
+
+    <!-- === 4. SECTION FOUR (SHORT FORM) === -->
+    <section class="section-four">
+        <div class="accent-hexagons">
+            <div class="hexagon hexagon-1"></div>
+            <div class="hexagon hexagon-2"></div>
+            <div class="hexagon hexagon-3"></div>
+        </div>
+
+        <!-- Blue Transition Lines effect -->
+        <div class="blue-transition-lines">
+            <div class="blue-line bl1"></div>
+            <div class="blue-line bl2"></div>
+            <div class="blue-line bl3"></div>
+            <div class="blue-line bl4"></div>
+            <div class="blue-line bl5"></div>
+            <div class="blue-line bl6"></div>
+            <div class="blue-line bl7"></div>
+            <div class="blue-line bl8"></div>
+            <div class="blue-line bl9"></div>
+            <div class="blue-line bl10"></div>
+            <div class="blue-line bl11"></div>
+            <div class="blue-line bl12"></div>
+            <div class="blue-line bl13"></div>
+            <div class="blue-line bl14"></div>
+            <div class="blue-line bl15"></div>
+            <div class="blue-line bl16"></div>
+            <div class="blue-line bl17"></div>
+            <div class="blue-line bl18"></div>
+        </div>
+
+        <div class="blue-content">
+            <div class="blue-text-wrapper">
+                <h2 class="viral-title">
+                    <span class="viral-word" style="display: inline-block; will-change: transform">SHORT</span><br />
+                    <span class="viral-word stagger-right"
+                        style="display: inline-block; will-change: transform">FORM</span>
+                </h2>
+            </div>
+
+            <div class="short-form-grid"></div>
+        </div>
+    </section>
+
+    <!-- === 5. STATS SECTION === -->
+    <section class="stats-section" id="statsSection">
+        <div class="stats-inner"></div>
+    </section>
+
+    <!-- === 6. PRICING SECTION === -->
+    <section class="pricing-section">
+        <div class="pricing-grid"></div>
+        <div class="pricing-bg-title">PRICING</div>
+
+        <div class="pricing-card">
+            <p class="pricing-plan-label">One Price. Endless Quality.</p>
+
+            <!-- Slot-machine price roller — built dynamically by buildPriceTicker() -->
+            <div class="price-ticker"></div>
+
+            <span class="pricing-period">Per Video Project</span>
+            <p class="pricing-desc">
+                Every cut crafted to keep viewers watching<br />and coming back.
+            </p>
+            <ul class="pricing-features"></ul>
+        </div>
+    </section>
+
+    <!-- === 7. SITE FOOTER === -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <!-- TOP ROW -->
+            <div class="footer-top">
+                <div class="footer-socials"></div>
+            </div>
+
+            <!-- MIDDLE ROW (EMAIL) -->
+            <div class="footer-middle f-email-wrap">
+                <a href="mailto:HELLO@COMZE.COM" class="footer-email">
+                    HELLO@COMZE.COM <span class="footer-arrow">↗</span>
+                </a>
+                <hr class="footer-divider" />
+            </div>
+
+            <!-- INFO ROW -->
+            <div class="footer-info">
+                <div class="footer-col f-info">
+                    <p class="big-footer-text">© ALL RIGHTS RESERVED, COMZE 2026</p>
+                </div>
+                <div class="footer-col f-info">
+                    <p class="big-footer-text">+44 7463615117</p>
+                </div>
+                <div class="footer-col f-info">
+                    <p class="big-footer-text">UAE - DUBAI</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MASSIVE BOTTOM TEXT -->
+        <div class="footer-brand-banner f-banner">
+            <h1 class="massive-text">comze</h1>
+        </div>
+    </footer>
+
+    <!-- Editable site content — loaded first so DOM is populated before animations run -->
+    <script src="data.js"></script>
+
+    <!-- Scripts for Smooth Scroll (Lenis) and Animations (GSAP) -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <script>
+        // ── DATA INJECTION — reads SITE_DATA from data.js and populates the DOM ──
+        // This runs before any animations so GSAP sees the correct content.
+
+        function buildPriceTicker(price) {
+            var ticker = document.querySelector(".price-ticker");
+            if (!ticker) return;
+
+            var priceStr = String(price);
+            var html = '<span class="price-sym">$</span>';
+
+            for (var i = 0; i < priceStr.length; i++) {
+                var char = priceStr[i];
+                if (/\d/.test(char)) {
+                    var d = Number(char);
+                    // Build one full 0-9 cycle, then a second cycle up to the target digit
+                    var spans = "";
+                    for (var n = 0; n <= 9; n++) spans += "<span>" + n + "</span>";
+                    for (var n = 0; n <= d; n++) spans += "<span>" + n + "</span>";
+
+                    html +=
+                        '<div class="digit-col">' +
+                        '<div class="digit-strip" data-final="' +
+                        d +
+                        '">' +
+                        spans +
+                        "</div>" +
+                        "</div>";
+                } else {
+                    // It's a dot, comma, or other separator
+                    html += '<span class="price-sep">' + char + '</span>';
+                }
+            }
+
+            ticker.innerHTML = html;
+            ticker.setAttribute("aria-label", "$" + price);
+        }
+
+        function populateSiteData() {
+            var D = SITE_DATA;
+
+            // ── HERO ──────────────────────────────────────────────────────
+            document.querySelector(".big-text").textContent = D.hero.brandName;
+            document.querySelector(".profile-img").src = D.hero.profileImage;
+
+            // ── NAV ───────────────────────────────────────────────────────
+            document.querySelector("nav ul").innerHTML = D.nav
+                .map(function (item) {
+                    return (
+                        '<li><a href="#" data-target="' +
+                        item.target +
+                        '">' +
+                        item.label +
+                        "</a></li>"
+                    );
+                })
+                .join("");
+
+            // ── HERO SOCIALS ──────────────────────────────────────────────
+            document.querySelector(".socials").innerHTML = D.heroSocials
+                .map(function (s) {
+                    return '<a href="' + s.url + '" target="_blank">' + s.label + "</a>";
+                })
+                .join("");
+
+            // ── SECTION TWO: CREATORS ─────────────────────────────────────
+            document.querySelector(".creator-title .stagger-left").textContent =
+                D.sectionTwo.headingLine1;
+            document.querySelector(".creator-title .stagger-right").textContent =
+                D.sectionTwo.headingLine2;
+
+            document.querySelector(".creator-scroll-grid").innerHTML =
+                D.sectionTwo.creators
+                    .map(function (c) {
+                        return (
+                            '<a href="' +
+                            c.url +
+                            '" target="_blank" class="creator">' +
+                            '<img loading="lazy" src="' +
+                            c.avatar +
+                            '" alt="' +
+                            c.name +
+                            '">' +
+                            "</a>"
+                        );
+                    })
+                    .join("");
+
+            // ── SECTION THREE: LONG FORM ──────────────────────────────────
+            var epicSpans = document.querySelectorAll(".epic-title span");
+            if (epicSpans[0])
+                epicSpans[0].textContent = D.sectionThree.headingLine1;
+            if (epicSpans[1])
+                epicSpans[1].textContent = D.sectionThree.headingLine2;
+
+            document.querySelector(".long-form-grid").innerHTML =
+                D.sectionThree.videos
+                    .map(function (vid) {
+                        return (
+                            '<div class="video-wrapper" data-vid="' +
+                            vid +
+                            '" onclick="toggleVideo(this)">' +
+                            '<img class="video-thumbnail"' +
+                            ' src="https://img.youtube.com/vi/' +
+                            vid +
+                            '/maxresdefault.jpg"' +
+                            " onerror=\"this.onerror=null;this.src='https://img.youtube.com/vi/" +
+                            vid +
+                            "/hqdefault.jpg';\">" +
+                            "</div>"
+                        );
+                    })
+                    .join("");
+
+            // ── SECTION FOUR: SHORT FORM ──────────────────────────────────
+            var viralWords = document.querySelectorAll(".viral-title .viral-word");
+            if (viralWords[0])
+                viralWords[0].textContent = D.sectionFour.headingLine1;
+            if (viralWords[1])
+                viralWords[1].textContent = D.sectionFour.headingLine2;
+
+            document.querySelector(".short-form-grid").innerHTML =
+                D.sectionFour.videos
+                    .map(function (vid) {
+                        return (
+                            '<div class="short-video-wrapper" data-vid="' +
+                            vid +
+                            '" onclick="toggleVideo(this)">' +
+                            '<img class="video-thumbnail"' +
+                            ' src="https://img.youtube.com/vi/' +
+                            vid +
+                            '/maxresdefault.jpg"' +
+                            " onerror=\"this.onerror=null;this.src='https://img.youtube.com/vi/" +
+                            vid +
+                            "/hqdefault.jpg';\">" +
+                            "</div>"
+                        );
+                    })
+                    .join("");
+
+            // ── STATS ─────────────────────────────────────────────────────
+            document.querySelector(".stats-inner").innerHTML =
+                D.stats
+                    .map(function (s) {
+                        return (
+                            '<div class="stat-item">' +
+                            '<span class="stat-line"></span>' +
+                            '<div class="stat-row">' +
+                            '<div class="stat-num-wrap">' +
+                            '<div class="stat-num" data-target="' +
+                            s.value +
+                            '">' +
+                            '<span class="stat-val">0</span>' +
+                            '<span class="stat-suf">' +
+                            s.suffix +
+                            "</span>" +
+                            "</div></div>" +
+                            '<span class="stat-label">' +
+                            s.label +
+                            "</span>" +
+                            "</div></div>"
+                        );
+                    })
+                    .join("") + '<span class="stat-line"></span>';
+
+            // ── PRICING ───────────────────────────────────────────────────
+            document.querySelector(".pricing-plan-label").textContent =
+                D.pricing.planLabel;
+            document.querySelector(".pricing-period").textContent =
+                D.pricing.period;
+            document.querySelector(".pricing-desc").innerHTML =
+                D.pricing.description;
+            buildPriceTicker(D.pricing.price);
+
+            document.querySelector(".pricing-features").innerHTML =
+                D.pricing.features
+                    .map(function (f) {
+                        return "<li>" + f + "</li>";
+                    })
+                    .join("");
+
+            // ── FOOTER ────────────────────────────────────────────────────
+            document.querySelector(".footer-socials").innerHTML = D.footer.socials
+                .map(function (s) {
+                    return (
+                        '<a href="' + s.url + '" class="f-social" target="_blank">' + s.label + "</a>"
+                    );
+                })
+                .join("");
+
+            var emailEl = document.querySelector(".footer-email");
+            emailEl.href = "mailto:" + D.footer.email;
+            emailEl.innerHTML =
+                D.footer.email + ' <span class="footer-arrow">\u2197</span>';
+
+            var infoCols = document.querySelectorAll(
+                ".footer-col .big-footer-text",
+            );
+            if (infoCols[0]) infoCols[0].textContent = D.footer.copyright;
+            if (infoCols[1]) infoCols[1].textContent = D.footer.phone;
+            if (infoCols[2]) infoCols[2].textContent = D.footer.location;
+
+            document.querySelector(".massive-text").textContent =
+                D.footer.brandName;
+        }
+
+        populateSiteData();
+
+        // ── DYNAMIC GIANT TEXT SCALING ──
+        // Ensure big brand names scale down if they are too long
+        function adjustGiantText() {
+            function scaleElement(selector, maxWidthRatio) {
+                var el = document.querySelector(selector);
+                if (!el) return;
+
+                el.style.fontSize = ""; // reset to CSS default
+                el.style.display = "inline-block";
+
+                var currentPx = parseFloat(window.getComputedStyle(el).fontSize);
+                var textWidth = el.scrollWidth;
+                var maxPx = window.innerWidth * maxWidthRatio;
+
+                if (textWidth > maxPx) {
+                    var ratio = maxPx / textWidth;
+                    el.style.fontSize = (currentPx * ratio) + "px";
+                }
+                el.style.display = ""; // restore block
+            }
+
+            // Both texts allowed to span up to 90% of viewport width (so they don't kiss the absolute edge)
+            scaleElement(".big-text", 0.90);
+            scaleElement(".massive-text", 0.90);
+        }
+
+        // Run once fonts are ready to get accurate width measurements
+        document.fonts.ready.then(adjustGiantText);
+        window.addEventListener("resize", adjustGiantText);
+    </script>
+
+    <script>
+        // ── SVG DRAW ARROW — injected into each .creator on hover ──
+        // Uses stroke-dashoffset trick so the arrow "draws itself" line by line
+        document.querySelectorAll(".creator").forEach((creator) => {
+            const NS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(NS, "svg");
+            svg.classList.add("creator-arrow-svg");
+            svg.setAttribute("viewBox", "0 0 60 60");
+            svg.setAttribute("fill", "none");
+
+            // Helper: create a line and set its dash length = its own pixel length
+            function makeLine(x1, y1, x2, y2, delay) {
+                const len = Math.hypot(x2 - x1, y2 - y1);
+                const el = document.createElementNS(NS, "line");
+                el.setAttribute("x1", x1);
+                el.setAttribute("y1", y1);
+                el.setAttribute("x2", x2);
+                el.setAttribute("y2", y2);
+                el.setAttribute("stroke", "#ffffff");
+                el.setAttribute("stroke-width", "2.8");
+                el.setAttribute("stroke-linecap", "round");
+                el.style.setProperty("--len", len);
+                el.style.strokeDasharray = len;
+                el.style.strokeDashoffset = len;
+                el.style.transition = `stroke-dashoffset 0.42s cubic-bezier(0.77, 0, 0.18, 1) ${delay}s`;
+                return el;
+            }
+
+            // Main diagonal line: bottom-left → top-right
+            const mainLine = makeLine(18, 42, 42, 18, 0);
+            // Arrowhead — horizontal top bar: left → right
+            const headH = makeLine(27, 18, 42, 18, 0.26);
+            // Arrowhead — vertical right bar: top → bottom
+            const headV = makeLine(42, 18, 42, 33, 0.36);
+
+            svg.appendChild(mainLine);
+            svg.appendChild(headH);
+            svg.appendChild(headV);
+            creator.appendChild(svg);
+
+            // ── MOUSEENTER: Draw arrow in sequence ──
+            creator.addEventListener("mouseenter", () => {
+                // Set draw transitions (entrance order)
+                mainLine.style.transition =
+                    "stroke-dashoffset 0.42s cubic-bezier(0.77, 0, 0.18, 1) 0s";
+                headH.style.transition =
+                    "stroke-dashoffset 0.38s cubic-bezier(0.77, 0, 0.18, 1) 0.26s";
+                headV.style.transition =
+                    "stroke-dashoffset 0.32s cubic-bezier(0.77, 0, 0.18, 1) 0.36s";
+                [mainLine, headH, headV].forEach(
+                    (l) => (l.style.strokeDashoffset = "0"),
+                );
+            });
+
+            // ── MOUSELEAVE: Un-draw in REVERSE order (fading in reverse) ──
+            creator.addEventListener("mouseleave", () => {
+                // Reverse sequence: headV first, then headH, then mainLine
+                headV.style.transition =
+                    "stroke-dashoffset 0.3s  cubic-bezier(0.77, 0, 0.18, 1) 0s";
+                headH.style.transition =
+                    "stroke-dashoffset 0.34s cubic-bezier(0.77, 0, 0.18, 1) 0.1s";
+                mainLine.style.transition =
+                    "stroke-dashoffset 0.4s  cubic-bezier(0.77, 0, 0.18, 1) 0.2s";
+
+                // Trigger un-draw (offset back to full length = invisible)
+                headV.style.strokeDashoffset = headV.style.strokeDasharray;
+                headH.style.strokeDashoffset = headH.style.strokeDasharray;
+                mainLine.style.strokeDashoffset = mainLine.style.strokeDasharray;
+
+                // After full exit completes, silently reset transitions for next hover
+                setTimeout(() => {
+                    [mainLine, headH, headV].forEach(
+                        (l) => (l.style.transition = "none"),
+                    );
+                    requestAnimationFrame(() =>
+                        requestAnimationFrame(() => {
+                            mainLine.style.transition =
+                                "stroke-dashoffset 0.42s cubic-bezier(0.77, 0, 0.18, 1) 0s";
+                            headH.style.transition =
+                                "stroke-dashoffset 0.38s cubic-bezier(0.77, 0, 0.18, 1) 0.26s";
+                            headV.style.transition =
+                                "stroke-dashoffset 0.32s cubic-bezier(0.77, 0, 0.18, 1) 0.36s";
+                        }),
+                    );
+                }, 680);
+            });
+        });
+    </script>
+
+
+
+    <script>
+
+        // --------------------------------------------------------
+        // 1. INIT LENIS (SMOOTH SCROLL)
+        // --------------------------------------------------------
+        const lenis = new Lenis({
+            duration: 1.5,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: "vertical",
+            gestureOrientation: "vertical",
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        // --------------------------------------------------------
+        // ── CINEMATIC TRIPLE SLICE CURTAIN ENGINE — REFINED ──
+        const curtain = document.getElementById("nav-curtain");
+        const cols = curtain.querySelectorAll(".curtain-col");
+        const brand = document.getElementById("brandText");
+        let isTransitioning = false;
+
+        const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
+        const EASE_IN = "cubic-bezier(0.7,  0, 0.84, 0)";
+        const EASE_LETTER = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+        const letters = brand.querySelectorAll(".brand-letter");
+        const brandLine = document.getElementById("brandLine");
+
+        function resetBrand() {
+            letters.forEach((l) => {
+                l.style.transition = "none";
+                l.style.transform = "translateY(112%)";
+            });
+            brandLine.style.transition = "none";
+            brandLine.style.width = "0%";
+        }
+
+        function curtainTransition(targetSelector) {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            const targetEl = document.querySelector(targetSelector);
+            if (!targetEl) {
+                isTransitioning = false;
+                return;
+            }
+
+            lenis.stop();
+            curtain.classList.add("active");
+
+            // ── RESET ──
+            cols.forEach((p) => {
+                p.style.transition = "none";
+                p.style.transform = "translateY(105%)";
+            });
+            resetBrand();
+
+            // ── IN: panels slide up staggered ──
+            const IN_DUR = 680;
+            const IN_STAGGER = 65;
+            const IN_START = 16;
+
+            cols.forEach((p, i) => {
+                setTimeout(
+                    () => {
+                        p.style.transition = `transform ${IN_DUR}ms ${EASE_OUT}`;
+                        p.style.transform = "translateY(0%)";
+                    },
+                    IN_START + i * IN_STAGGER,
+                );
+            });
+
+            // ── LETTERS: staggered slide-up reveal ──
+            const LETTER_DUR = 680;
+            const LETTER_STAGGER = 58;
+            const BRAND_IN = IN_START + 2 * IN_STAGGER + IN_DUR * 0.6;
+
+            letters.forEach((l, i) => {
+                setTimeout(
+                    () => {
+                        l.style.transition = `transform ${LETTER_DUR}ms ${EASE_LETTER}`;
+                        l.style.transform = "translateY(0%)";
+                    },
+                    BRAND_IN + i * LETTER_STAGGER,
+                );
+            });
+
+            // ── LINE: draws after last letter starts ──
+            setTimeout(
+                () => {
+                    brandLine.style.transition =
+                        "width 0.55s cubic-bezier(0.16, 1, 0.3, 1)";
+                    brandLine.style.width = "100%";
+                },
+                BRAND_IN + 4 * LETTER_STAGGER + 120,
+            );
+
+            // ── HOLD ──
+            const HOLD = 820;
+            const OUT_START = IN_START + 2 * IN_STAGGER + IN_DUR + HOLD;
+            const OUT_DUR = 600;
+            const OUT_STAGGER = 55;
+
+            // Scroll silently while covered
+            setTimeout(() => {
+                const stMap = {
+                    ".section-two": "st-section-two",
+                    ".section-three": "st-section-three",
+                };
+                const offsetMap = { ".section-three": window.innerHeight * 0.15 };
+                const stId = stMap[targetSelector];
+                let y;
+                if (stId) {
+                    const st = ScrollTrigger.getById(stId);
+                    y = st ? st.start + 2 : targetEl.offsetTop;
+                } else {
+                    y = targetEl.offsetTop;
+                }
+                y += offsetMap[targetSelector] || 0;
+                window.scrollTo(0, y);
+            }, OUT_START - 280);
+
+            // ── LINE EXIT ──
+            setTimeout(() => {
+                brandLine.style.transition = "width 0.22s ease-in";
+                brandLine.style.width = "0%";
+            }, OUT_START - 230);
+
+            // ── LETTERS EXIT: drop upward with slight stagger ──
+            letters.forEach((l, i) => {
+                setTimeout(
+                    () => {
+                        l.style.transition = `transform 0.38s ${EASE_IN}`;
+                        l.style.transform = "translateY(-112%)";
+                    },
+                    OUT_START - 160 + i * 32,
+                );
+            });
+
+            // ── OUT: panels slide up ──
+            cols.forEach((p, i) => {
+                setTimeout(
+                    () => {
+                        p.style.transition = `transform ${OUT_DUR}ms ${EASE_IN}`;
+                        p.style.transform = "translateY(-105%)";
+                    },
+                    OUT_START + i * OUT_STAGGER,
+                );
+            });
+
+            // ── DONE ──
+            setTimeout(
+                () => {
+                    curtain.classList.remove("active");
+                    resetBrand();
+                    isTransitioning = false;
+                    lenis.start();
+                },
+                OUT_START + 2 * OUT_STAGGER + OUT_DUR + 80,
+            );
+        }
+
+        document.querySelectorAll("nav a[data-target]").forEach((link) => {
+            link.addEventListener("click", (e) => {
+                e.preventDefault();
+                curtainTransition(link.getAttribute("data-target"));
+            });
+        });
+
+        // ── VIDEO ENGINE — one active at a time, max volume ──
+        var _activeVideoWrapper = null;
+
+        function _stopVideo(w) {
+            if (!w) return;
+            w.classList.remove("is-playing");
+            var f = w.querySelector("iframe");
+            if (f) f.remove();
+        }
+
+        function toggleVideo(wrapper) {
+            var isPlaying = wrapper.classList.contains("is-playing");
+            var vid = wrapper.getAttribute("data-vid");
+            var cursor = document.querySelector(".custom-cursor");
+
+            // Stop any other playing video
+            if (_activeVideoWrapper && _activeVideoWrapper !== wrapper) {
+                _stopVideo(_activeVideoWrapper);
+                _activeVideoWrapper = null;
+                cursor.classList.remove("stop-cursor");
+                cursor.classList.add("play-cursor");
+            }
+
+            if (!isPlaying) {
+                // PLAY
+                wrapper.classList.add("is-playing");
+                _activeVideoWrapper = wrapper;
+
+                // enablejsapi=1 allows postMessage volume control, playsinline=1 allows iOS native playback
+                var isTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+                var iframeHTML =
+                    '<iframe src="https://www.youtube.com/embed/' +
+                    vid +
+                    '?autoplay=1&rel=0&controls=1&modestbranding=1&enablejsapi=1&playsinline=1" ' +
+                    'frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen ' +
+                    'style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;pointer-events:' + (isTouch ? 'auto' : 'none') + ';z-index:5;"></iframe>';
+                wrapper.insertAdjacentHTML("beforeend", iframeHTML);
+
+                // Set max volume once iframe is ready
+                var iframe = wrapper.querySelector("iframe");
+                iframe.addEventListener("load", function () {
+                    setTimeout(function () {
+                        iframe.contentWindow.postMessage(
+                            JSON.stringify({ event: "command", func: "unMute", args: [] }),
+                            "*",
+                        );
+                        iframe.contentWindow.postMessage(
+                            JSON.stringify({
+                                event: "command",
+                                func: "setVolume",
+                                args: [100],
+                            }),
+                            "*",
+                        );
+                    }, 500);
+                });
+
+                cursor.classList.remove("play-cursor");
+                cursor.classList.add("stop-cursor");
+            } else {
+                // STOP
+                _stopVideo(wrapper);
+                _activeVideoWrapper = null;
+                cursor.classList.remove("stop-cursor");
+                cursor.classList.add("play-cursor");
+            }
+        }
+
+        // ── LENIS / GSAP RAF INTEGRATION ──
+        lenis.on("scroll", ScrollTrigger.update);
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+        gsap.ticker.lagSmoothing(0);
+
+        // --------------------------------------------------------
+        // 2. GSAP ANIMATIONS
+        // --------------------------------------------------------
+        gsap.registerPlugin(ScrollTrigger);
+        ScrollTrigger.config({ ignoreMobileResize: true });
+
+
+        // --- Custom Smooth Cursor ---
+        gsap.set(".custom-cursor", { xPercent: -50, yPercent: -50 });
+        let xTo = gsap.quickTo(".custom-cursor", "x", {
+            duration: 0.4,
+            ease: "power3.out",
+        }),
+            yTo = gsap.quickTo(".custom-cursor", "y", {
+                duration: 0.4,
+                ease: "power3.out",
+            });
+
+        let cursorRevealed = false;
+        window.addEventListener("mousemove", (e) => {
+            if (!cursorRevealed) {
+                // First move: snap instantly to real mouse position, then fade in
+                cursorRevealed = true;
+                gsap.set(".custom-cursor", { x: e.clientX, y: e.clientY });
+                gsap.to(".custom-cursor", { opacity: 1, duration: 0.3, ease: "power2.out" });
+            }
+            xTo(e.clientX);
+            yTo(e.clientY);
+        });
+
+        // Interactive Luxurious Play/Stop Cursor Events
+        document
+            .querySelectorAll(".video-wrapper, .short-video-wrapper")
+            .forEach((video) => {
+                video.addEventListener("mouseenter", () => {
+                    const cursor = document.querySelector(".custom-cursor");
+                    if (video.classList.contains("is-playing")) {
+                        cursor.classList.add("stop-cursor");
+                    } else {
+                        cursor.classList.add("play-cursor");
+                    }
+                });
+                video.addEventListener("mouseleave", () => {
+                    const cursor = document.querySelector(".custom-cursor");
+                    cursor.classList.remove("play-cursor");
+                    cursor.classList.remove("stop-cursor");
+                });
+            });
+
+        // --- Intro Sequence ---
+        // Pre-set the profile container's horizontal position immediately (synchronously)
+        // so the scroll parallax (registered below) reads the correct xPercent: -50 starting
+        // state instead of 0. Without this, the parallax would slide the image horizontally
+        // as you scroll, since it captures the "from" state before the async intro runs.
+        gsap.set(".profile-container", { xPercent: -50 });
+
+        // Wait for fonts to finish loading before revealing the page and starting animations.
+        // This prevents FOUC (Flash of Unstyled Content) on Netlify where Google Fonts
+        // download asynchronously — without this, fonts swap in mid-animation causing a
+        // visible "lag" or "glitch" in the Hero section on first load.
+
+        // Safety fallback for body render
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => { document.body.style.opacity = '1'; }, 2000);
+        });
+
+        (function startIntroWhenReady() {
+            var fontsReady = (document.fonts && document.fonts.ready)
+                ? document.fonts.ready
+                : Promise.resolve();
+            // Fallback: if fonts take more than 2.5s, reveal anyway to avoid blank screen
+            var safetyTimeout = new Promise(function (resolve) {
+                setTimeout(resolve, 2500);
+            });
+
+            // Prevent FOUC layout snapping by pre-setting GSAP positions synchronously
+            gsap.set(".big-text", { y: "-100vh" });
+            gsap.set(".square", { y: "-100vh", rotation: -45 });
+            gsap.set(".profile-container", { y: "100vh", xPercent: -50, autoAlpha: 1 });
+            gsap.set("header nav li", { y: "-100vh" });
+            gsap.set(".socials a", { x: "-100vw" });
+
+            Promise.race([fontsReady, safetyTimeout]).then(function () {
+                // Reveal page now that fonts are ready (no more FOUC risk)
+                document.body.style.opacity = "1";
+
+                // ZERO FADE: Immediate powerful plunge (power4.out) to remove initial delay
+                const tlIntro = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+                // Big Text: Drops gracefully from beyond the top of the webpage
+                tlIntro.fromTo(
+                    ".big-text",
+                    { y: "-100vh" },
+                    { y: "0%", duration: 2.2 },
+                    0,
+                );
+
+                // Accents (Squares): High-speed drop from outside the screen (sky)
+                tlIntro.fromTo(
+                    ".square",
+                    { y: "-100vh", rotation: -45 },
+                    { y: "0vh", rotation: 0, duration: 2.2, stagger: 0.1 },
+                    0.1,
+                );
+
+                // Profile image: Power slide from heavily off-screen bottom perfectly solid
+                tlIntro.fromTo(
+                    ".profile-container",
+                    { y: "100vh", xPercent: -50, autoAlpha: 1 }, /* Snaps visible instantly, no fade */
+                    { y: "0vh", xPercent: -50, duration: 2.2 },
+                    0.2,
+                );
+
+                // Header: Slide aggressively from top edge outside frame
+                tlIntro.fromTo(
+                    "header nav li",
+                    { y: "-100vh" },
+                    { y: 0, duration: 2, stagger: 0.08 },
+                    0.3,
+                );
+
+                // Socials: Slide aggressively from the left outside frame
+                tlIntro.fromTo(
+                    ".socials a",
+                    { x: "-100vw" },
+                    { x: 0, duration: 2, stagger: 0.08 },
+                    0.4,
+                );
+            });
+        })();
+
+        // --- Scroll Parallax Effects ---
+
+        // Reverse geometric rotation for Purple Section
+        gsap.to(".purple-hexagons", {
+            rotation: 60,
+            yPercent: 20 /* Slides down opposite of shorts */,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".section-three",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        gsap.to(".accent-hexagons", {
+            rotation: -60,
+            yPercent: -25,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".section-four",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        // Parallax Big Text
+        gsap.to(".big-text-container", {
+            yPercent: -20,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".hero",
+                start: "top top",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        // Hero Transition Lines — position:fixed means they always render ON TOP of section-two
+        // GSAP moves lines DOWN through the fixed viewport window as user scrolls
+        const stHeroLines = {
+            trigger: ".hero",
+            start: "top top",
+            endTrigger: ".section-two",
+            end: "center top",
+            scrub: 2.5,
+        };
+
+        // Far background — slowest, most ghostly
+        gsap.fromTo(
+            ".hl7, .hl12",
+            { y: 0, opacity: 0.18 },
+            { y: "80vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+        );
+        // Midground — medium speed & opacity
+        gsap.fromTo(
+            ".hl1, .hl3, .hl8, .hl10, .hl11",
+            { y: 0, opacity: 0.45 },
+            { y: "120vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+        );
+        // Near foreground — fastest, brightest, most visible over green section
+        gsap.fromTo(
+            ".hl2, .hl4, .hl5, .hl6, .hl9",
+            { y: 0, opacity: 0.7 },
+            { y: "170vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+        );
+
+        // Hide the fixed layer entirely once section-two is fully passed
+        ScrollTrigger.create({
+            trigger: ".section-two",
+            start: "bottom top",
+            onEnter: () =>
+                gsap.set(".hero-transition-lines", { visibility: "hidden" }),
+            onLeaveBack: () =>
+                gsap.set(".hero-transition-lines", { visibility: "visible" }),
+        });
+
+        // Green Squares Rotation Parallax
+        gsap.to(".green-squares", {
+            rotation: -90,
+            yPercent: -20,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".section-two",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        // Glowing Transition Lines (Continuing deeply into section-two)
+        const stLines = {
+            trigger: ".hero",
+            start: "top top",
+            endTrigger: ".section-two",
+            end: "bottom top",
+            scrub: true,
+        };
+        [750,880,680,820,950,720,850,650,920,780,890,690,810,870,760,1000,940,660].forEach((y, i) => {
+            gsap.to(`.l${i + 1}`, { y: `${y}vh`, ease: "none", scrollTrigger: stLines });
+        });
+
+        // Purple Transition Lines (Continuing deeply into section-three)
+        const stPurpleLines = {
+            trigger: ".section-two",
+            start: "top top",
+            endTrigger: ".section-three",
+            end: "bottom top",
+            scrub: true,
+        };
+        [750,880,680,820,950,720,850,650,920,780,890,690,810,870,760,1000,940,660].forEach((y, i) => {
+            gsap.to(`.pl${i + 1}`, { y: `${y}vh`, ease: "none", scrollTrigger: stPurpleLines });
+        });
+
+        // Parallax User Profile
+        gsap.to(".profile-container", {
+            yPercent: 10,
+            xPercent: -50,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".hero",
+                start: "top top",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        // --------------------------------------------------------
+        // 3. KINETIC HORIZONTAL SECTIONS  (desktop only — ≥ 769px)
+        //    On mobile the sections are normal vertical-flow content
+        //    styled via CSS; GSAP pins / horizontal x-animations are
+        //    skipped entirely so videos are always visible.
+        // --------------------------------------------------------
+
+        const creatorsGrid = document.querySelector(".creator-scroll-grid");
+        const longGrid = document.querySelector(".long-form-grid");
+        const shortsGrid = document.querySelector(".short-form-grid");
+
+        // Squares Rotation Parallax — runs on all screen sizes (hero, not pinned)
+        gsap.to(".accent-squares", {
+            rotation: 15,
+            yPercent: -10,
+            ease: "none",
+            scrollTrigger: {
+                trigger: ".hero",
+                start: "top top",
+                end: "bottom top",
+                scrub: true,
+            },
+        });
+
+        // ── Desktop-only horizontal pin sections ──
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+            // --- SECTION TWO: KINETIC HORIZONTAL ENTRY ---
+            gsap.to(creatorsGrid, {
+                x: () => -(creatorsGrid.scrollWidth - window.innerWidth),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".section-two",
+                    start: "top top",
+                    end: () => `+=${creatorsGrid.scrollWidth}`,
+                    pin: true,
+                    scrub: 1,
+                    invalidateOnRefresh: true,
+                    id: "st-section-two",
+                },
+            });
+
+            // Massive Background text parallax (Opposite pull)
+            gsap.to(".creator-title", {
+                x: "20vw",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".section-two",
+                    start: "top top",
+                    end: () => `+=${creatorsGrid.scrollWidth}`,
+                    scrub: 1,
+                },
+            });
+
+            // --- Section Three: Kinetic Entry Animations (Horizontal Cinematic Pass) ---
+            gsap.fromTo(
+                longGrid,
+                { x: () => -(longGrid.scrollWidth - window.innerWidth * 0.65) },
+                {
+                    x: () => window.innerWidth * 0.5,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".section-three",
+                        start: "top top",
+                        end: () => `+=${longGrid.scrollWidth + window.innerWidth * 0.5}`,
+                        pin: true,
+                        scrub: 1,
+                        invalidateOnRefresh: true,
+                        id: "st-section-three",
+                    },
+                },
+            );
+
+            // Background Text Parallax
+            gsap.fromTo(
+                ".epic-title",
+                { x: 0 },
+                {
+                    x: "-30vw",
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".section-three",
+                        start: "top top",
+                        end: () => `+=${longGrid.scrollWidth + window.innerWidth * 0.5}`,
+                        scrub: 1,
+                    },
+                },
+            );
+
+            // --- Section Four Viral Animation (Luxurious Horizontal Pull Scroll) ---
+            gsap.to(shortsGrid, {
+                x: () => -(shortsGrid.scrollWidth - window.innerWidth),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".section-four",
+                    start: "top top",
+                    end: () => `+=${shortsGrid.scrollWidth}`,
+                    pin: true,
+                    scrub: 1,
+                    invalidateOnRefresh: true,
+                },
+            });
+
+            // Massive Background text parallax
+            gsap.to(".viral-title", {
+                x: "30vw",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".section-four",
+                    start: "top top",
+                    end: () => `+=${shortsGrid.scrollWidth}`,
+                    scrub: 1,
+                },
+            });
+        }); // end matchMedia desktop
+
+        // ── Mobile-only vertical entrance animations (≤ 768px) ──
+        gsap.matchMedia().add("(max-width: 768px)", function () {
+            // --- SECTION TWO: CHANNELS REVEAL ---
+            gsap.from(".creator", {
+                scale: 0.5,
+                opacity: 0,
+                duration: 0.8,
+                stagger: 0.1,
+                ease: "back.out(1.7)",
+                scrollTrigger: {
+                    trigger: ".creator-scroll-grid",
+                    start: "top 85%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+
+            gsap.from(".creator-title span", {
+                x: (i) => i === 0 ? -100 : 100,
+                opacity: 0,
+                filter: "blur(10px)",
+                duration: 1.2,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: ".creator-title",
+                    start: "top 90%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+
+            // --- SECTION THREE: LONG FORM REVEAL ---
+            gsap.from(".video-wrapper", {
+                y: 100,
+                opacity: 0,
+                filter: "blur(10px)",
+                duration: 1,
+                stagger: 0.2,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: ".long-form-grid",
+                    start: "top 80%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+
+            gsap.from(".epic-title span", {
+                y: (i) => i === 0 ? -50 : 50,
+                opacity: 0,
+                filter: "blur(10px)",
+                duration: 1.2,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: ".epic-title",
+                    start: "top 90%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+
+            // --- SECTION FOUR: SHORT FORM REVEAL ---
+            gsap.from(".short-video-wrapper", {
+                scale: 0.8,
+                y: 50,
+                opacity: 0,
+                filter: "blur(10px)",
+                duration: 1,
+                stagger: 0.15,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: ".short-form-grid",
+                    start: "top 80%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+
+            gsap.from(".viral-title span", {
+                x: (i) => i === 0 ? 100 : -100,
+                opacity: 0,
+                filter: "blur(10px)",
+                duration: 1.2,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: ".viral-title",
+                    start: "top 90%",
+                    toggleActions: "play none none reverse",
+                }
+            });
+        });
+
+        // --- Section Four Blue Transition Lines --- (all screen sizes)
+        const stBlueLines = {
+            trigger: ".section-three",
+            start: "top top",
+            endTrigger: ".section-four",
+            end: "bottom top",
+            scrub: true,
+        };
+        [750,880,680,820,950,720,850,650,920,780,890,690,810,870,760,1000,940,660].forEach((y, i) => {
+            gsap.to(`.bl${i + 1}`, { y: `${y}vh`, ease: "none", scrollTrigger: stBlueLines });
+        });
+
+        // --------------------------------------------------------
+        // 4. FOOTER & PRICING PARALLAX
+        // --------------------------------------------------------
+
+        // --- Luxurious Footer Scrub Parallax (Hero Style) ---
+        const footerParallaxST = {
+            trigger: ".site-footer",
+            start: "top bottom",
+            end: "bottom bottom",
+            scrub: true,
+        };
+
+        // Socials slide from fully-hidden above the footer-top boundary — clipped by overflow:hidden
+        gsap.fromTo(
+            ".footer-socials .f-social",
+            { y: -200 },
+            {
+                y: 0,
+                duration: 1.4,
+                stagger: 0.18,
+                ease: "power4.out",
+                scrollTrigger: {
+                    trigger: ".pricing-section",
+                    start: "bottom 85%",
+                    toggleActions: "play none none reverse",
+                },
+            },
+        );
+
+        // --- PRICING SECTION: PARALLAX DEPTH (no text collision) ---
+
+        // Background PRICING title: moves opposite direction for cinematic depth
+        gsap.fromTo(
+            ".pricing-bg-title",
+            { y: "15vh" },
+            {
+                y: "-15vh",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".pricing-section",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 1.5,
+                },
+            },
+        );
+
+        // Entire card moves as ONE unit — no internal collision possible
+        gsap.fromTo(
+            ".pricing-card",
+            { y: "12vh" },
+            {
+                y: "-8vh",
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".pricing-section",
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 2,
+                },
+            },
+        );
+
+        // Slot-machine digit roller — fires once on enter, premium ease
+        ScrollTrigger.create({
+            trigger: ".pricing-section",
+            start: "top 70%",
+            once: true,
+            onEnter: () => {
+                document.querySelectorAll(".digit-strip").forEach((strip, i) => {
+                    const finalDigit = parseInt(strip.dataset.final);
+                    const digitH = strip.querySelector("span").offsetHeight;
+                    const targetY = -(finalDigit * digitH + 10 * digitH);
+                    gsap.fromTo(
+                        strip,
+                        { y: 0 },
+                        {
+                            y: targetY,
+                            duration: 2.6 + i * 0.2,
+                            ease: "power4.inOut",
+                            delay: i * 0.12,
+                        },
+                    );
+                });
+            },
+        });
+        // Email block sinks deep into the page (moves down significantly relative to the scroll)
+        gsap.fromTo(
+            ".footer-middle",
+            { y: "150px" },
+            { y: "-50px", ease: "none", scrollTrigger: footerParallaxST },
+        );
+        // Info columns drift down
+        gsap.fromTo(
+            ".footer-info",
+            { y: "80px" },
+            { y: "0px", ease: "none", scrollTrigger: footerParallaxST },
+        );
+        // Massive COMZE text rises forcefully from the very bottom
+        gsap.fromTo(
+            ".massive-text",
+            { y: "250px", scale: 0.95 },
+            { y: "0px", scale: 1, ease: "none", scrollTrigger: footerParallaxST },
+        );
+
+        // --------------------------------------------------------
+        // 5. STATS SECTION — CINEMATIC ENTRANCE
+        // --------------------------------------------------------
+        (function () {
+            const section = document.getElementById("statsSection");
+            const items = Array.from(section.querySelectorAll(".stat-item"));
+            const lines = Array.from(section.querySelectorAll(".stat-line"));
+
+            // Initial hidden state
+            lines.forEach(function (ln) {
+                gsap.set(ln, { scaleX: 0, transformOrigin: "left center" });
+            });
+            items.forEach(function (item) {
+                gsap.set(item.querySelector(".stat-num"), { y: "110%" });
+                gsap.set(item.querySelector(".stat-label"), { y: "110%" });
+            });
+
+            function countUp(numEl) {
+                const target = parseFloat(numEl.dataset.target);
+                const valEl = numEl.querySelector(".stat-val");
+                if (!valEl) return;
+                const obj = { v: 0 };
+                gsap.to(obj, {
+                    v: target,
+                    duration: 2.0,
+                    ease: "expo.out",
+                    onUpdate() {
+                        valEl.textContent =
+                            target < 10 ? obj.v.toFixed(1) : Math.round(obj.v);
+                    },
+                });
+            }
+
+            ScrollTrigger.create({
+                trigger: section,
+                start: "top 65%",
+                once: true,
+                onEnter: function () {
+                    const tl = gsap.timeline();
+
+                    items.forEach(function (item, i) {
+                        const t = i * 0.18;
+                        const line = lines[i];
+                        const num = item.querySelector(".stat-num");
+                        const label = item.querySelector(".stat-label");
+
+                        // Line reveals left → right
+                        tl.to(line, { scaleX: 1, duration: 0.8, ease: "expo.out" }, t);
+
+                        // Number clips up from below
+                        tl.to(
+                            num,
+                            { y: "0%", duration: 1.1, ease: "power4.out" },
+                            t + 0.08,
+                        );
+
+                        // Label clips up with slight delay
+                        tl.to(
+                            label,
+                            { y: "0%", duration: 1.1, ease: "power4.out" },
+                            t + 0.14,
+                        );
+
+                        // Count-up
+                        tl.call(
+                            function () {
+                                countUp(num);
+                            },
+                            null,
+                            t + 0.1,
+                        );
+                    });
+
+                    // Last bottom line
+                    tl.to(
+                        lines[lines.length - 1],
+                        { scaleX: 1, duration: 0.8, ease: "expo.out" },
+                        items.length * 0.18,
+                    );
+                },
+            });
+        })();
+    </script>
+
+    <script>
+        /* ══════════════════════════════════════════════════════════════
+             === MOBILE JS GUARDS ===
+             Touch detection, Lenis disable, cursor hide, parallax reduction.
+             This block ONLY adds guards — it does NOT modify any
+             existing GSAP / ScrollTrigger / Lenis logic above.
+          ══════════════════════════════════════════════════════════════ */
+        (function mobileGuards() {
+            "use strict";
+
+            // ── BFCache Layout Guard (Fix broken layout on back navigation) ──
+            window.addEventListener("pageshow", function (e) {
+                if (e.persisted && typeof ScrollTrigger !== "undefined") {
+                    ScrollTrigger.refresh();
+                }
+            });
+
+            // ── Single touch-device flag ──
+            const isTouchDevice =
+                "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+            if (!isTouchDevice) return; // Desktop — bail out, nothing to do
+
+            // ── 1. CUSTOM CURSOR: hide entirely on touch devices ──
+            const cursorEl = document.querySelector(".custom-cursor");
+            if (cursorEl) {
+                cursorEl.style.display = "none";
+            }
+            // Restore default cursor on body
+            document.body.style.cursor = "auto";
+            document.querySelectorAll("a, button").forEach(function (el) {
+                el.style.cursor = "pointer";
+            });
+
+            // ── 11. LENIS: destroy on touch → native scroll ──
+            if (
+                typeof lenis !== "undefined" &&
+                lenis &&
+                typeof lenis.destroy === "function"
+            ) {
+                lenis.destroy();
+            }
+
+            // ── 2. ANIMATIONS: We explicitly KEEP GSAP SCRUB ANIMATIONS ON MOBILE NOW!
+            // To ensure 60-120fps without lag, we use native scroll (Lenis disabled above)
+            // and we optimized CSS via @media to remove heavy drop-shadows on mobile.
+            // (Removed the previous st.kill() code for lines and footer)
+
+            // ── Ensure video wrappers have pointer cursors on touch ──
+            document
+                .querySelectorAll(".video-wrapper, .short-video-wrapper")
+                .forEach(function (el) {
+                    el.style.cursor = "pointer";
+                });
+        })();
+        /* === END MOBILE JS GUARDS === */
+    </script>
+
+</body>
+
+</html>
