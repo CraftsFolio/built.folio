@@ -2399,20 +2399,13 @@
                 gap: 1.1rem;
             }
 
-            .section-two,
-            .section-three,
-            .section-four {
-                transform: translateZ(0);
-                will-change: transform;
-            }
-
             .creator,
             .video-wrapper,
             .short-video-wrapper,
             .creator-title span,
             .epic-title span,
             .viral-title span {
-                will-change: transform, opacity, filter;
+                will-change: transform, opacity;
             }
 
             .stats-section {
@@ -2454,9 +2447,10 @@
             .section-three::after,
             .section-four::before,
             .section-four::after {
-                width: 160vw !important;
-                height: 160vw !important;
-                filter: blur(80px) !important;
+                width: 120vw !important;
+                height: 120vw !important;
+                filter: blur(30px) !important;
+                opacity: 0.25 !important;
             }
 
             .hero::before,
@@ -2471,8 +2465,7 @@
             .section-two::after,
             .section-three::after,
             .section-four::after {
-                bottom: -15vh !important;
-                right: -30vw !important;
+                display: none !important;
             }
 
             /* ── HERO REDESIGN FOR MOBILE ── */
@@ -3813,9 +3806,21 @@
             .site-footer::before,
             .site-footer::after {
                 animation: none;
-                filter: blur(60px);
-                opacity: 0.4;
+                filter: blur(30px);
+                opacity: 0.25;
                 pointer-events: none !important;
+                transform: none !important;
+            }
+
+            /* On mobile keep only ONE glow orb per section visible */
+            .hero::after,
+            .section-two::after,
+            .section-three::after,
+            .section-four::after,
+            .pricing-section::after,
+            .stats-section::after,
+            .site-footer::after {
+                display: none;
             }
 
             body {
@@ -3823,9 +3828,44 @@
             }
 
             .top-glass-blur {
-                backdrop-filter: blur(6px);
-                -webkit-backdrop-filter: blur(6px);
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                background: linear-gradient(to bottom, rgba(5,5,5,0.6) 0%, transparent 100%);
                 height: 10vh;
+            }
+
+            .pricing-card {
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                background: rgba(20, 20, 20, 0.92);
+            }
+
+            .pricing-card::before {
+                animation: none;
+                background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+            }
+
+            /* Isolate each section's paint to prevent cross-section repaint cascade */
+            .section-two,
+            .section-three,
+            .section-four,
+            .stats-section,
+            .pricing-section {
+                contain: style paint;
+            }
+
+            /* Remove will-change from decorative elements on mobile — not animating */
+            .purple-hexagons,
+            .accent-hexagons,
+            .green-squares,
+            .accent-squares,
+            .hero-transition-lines,
+            .brand-letter,
+            .pricing-bg-title,
+            .pricing-card,
+            .big-text-container,
+            .profile-container {
+                will-change: auto;
             }
         }
 
@@ -4697,12 +4737,15 @@
             }
         }
 
-        // ── LENIS / GSAP RAF INTEGRATION ──
-        lenis.on("scroll", ScrollTrigger.update);
-        gsap.ticker.add((time) => {
-            lenis.raf(time * 1000);
-        });
-        gsap.ticker.lagSmoothing(0);
+        // ── LENIS / GSAP RAF INTEGRATION (desktop smooth scroll only) ──
+        const isTouchInit = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+        if (!isTouchInit) {
+            lenis.on("scroll", ScrollTrigger.update);
+            gsap.ticker.add((time) => {
+                lenis.raf(time * 1000);
+            });
+            gsap.ticker.lagSmoothing(0);
+        }
 
         // --------------------------------------------------------
         // 2. GSAP ANIMATIONS
@@ -4835,12 +4878,13 @@
             });
         })();
 
-        // --- Scroll Parallax Effects ---
+        // --- Scroll Parallax Effects (desktop only — too expensive on mobile GPU) ---
+        gsap.matchMedia().add("(min-width: 769px)", function () {
 
         // Reverse geometric rotation for Purple Section
         gsap.to(".purple-hexagons", {
             rotation: 60,
-            yPercent: 20 /* Slides down opposite of shorts */,
+            yPercent: 20,
             ease: "none",
             scrollTrigger: {
                 trigger: ".section-three",
@@ -4874,34 +4918,37 @@
             },
         });
 
-        // Hero Transition Lines — position:fixed means they always render ON TOP of section-two
-        // GSAP moves lines DOWN through the fixed viewport window as user scrolls
-        const stHeroLines = {
-            trigger: ".hero",
-            start: "top top",
-            endTrigger: ".section-two",
-            end: "center top",
-            scrub: 2.5,
-        };
+        }); // end desktop-only parallax
 
-        // Far background — slowest, most ghostly
-        gsap.fromTo(
-            ".hl7, .hl12",
-            { y: 0, opacity: 0.18 },
-            { y: "80vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
-        );
-        // Midground — medium speed & opacity
-        gsap.fromTo(
-            ".hl1, .hl3, .hl8, .hl10, .hl11",
-            { y: 0, opacity: 0.45 },
-            { y: "120vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
-        );
-        // Near foreground — fastest, brightest, most visible over green section
-        gsap.fromTo(
-            ".hl2, .hl4, .hl5, .hl6, .hl9",
-            { y: 0, opacity: 0.7 },
-            { y: "170vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
-        );
+        // Hero Transition Lines — desktop only (hidden via CSS on mobile, skip JS cost too)
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+            const stHeroLines = {
+                trigger: ".hero",
+                start: "top top",
+                endTrigger: ".section-two",
+                end: "center top",
+                scrub: 2.5,
+            };
+
+            // Far background — slowest, most ghostly
+            gsap.fromTo(
+                ".hl7, .hl12",
+                { y: 0, opacity: 0.18 },
+                { y: "80vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+            );
+            // Midground — medium speed & opacity
+            gsap.fromTo(
+                ".hl1, .hl3, .hl8, .hl10, .hl11",
+                { y: 0, opacity: 0.45 },
+                { y: "120vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+            );
+            // Near foreground — fastest, brightest, most visible over green section
+            gsap.fromTo(
+                ".hl2, .hl4, .hl5, .hl6, .hl9",
+                { y: 0, opacity: 0.7 },
+                { y: "170vh", opacity: 0, ease: "none", scrollTrigger: stHeroLines },
+            );
+        });
 
         // Hide the fixed layer entirely once section-two is fully passed
         ScrollTrigger.create({
@@ -4914,6 +4961,9 @@
         });
 
         // Green Squares Rotation Parallax
+        // Green squares, lines, profile parallax — desktop only
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+
         gsap.to(".green-squares", {
             rotation: -90,
             yPercent: -20,
@@ -4963,6 +5013,8 @@
             },
         });
 
+        }); // end desktop-only lines/profile parallax
+
         // --------------------------------------------------------
         // 3. KINETIC HORIZONTAL SECTIONS  (desktop only — ≥ 769px)
         //    On mobile the sections are normal vertical-flow content
@@ -4974,17 +5026,19 @@
         const longGrid = document.querySelector(".long-form-grid");
         const shortsGrid = document.querySelector(".short-form-grid");
 
-        // Squares Rotation Parallax — runs on all screen sizes (hero, not pinned)
-        gsap.to(".accent-squares", {
-            rotation: 15,
-            yPercent: -10,
-            ease: "none",
-            scrollTrigger: {
-                trigger: ".hero",
-                start: "top top",
-                end: "bottom top",
-                scrub: true,
-            },
+        // Squares Rotation Parallax — desktop only
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+            gsap.to(".accent-squares", {
+                rotation: 15,
+                yPercent: -10,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: ".hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: true,
+                },
+            });
         });
 
         // ── Desktop-only horizontal pin sections ──
@@ -5095,11 +5149,10 @@
             });
 
             gsap.from(".creator-title span", {
-                x: (i) => i === 0 ? -100 : 100,
+                x: (i) => i === 0 ? -60 : 60,
                 opacity: 0,
-                filter: "blur(10px)",
-                duration: 1.2,
-                ease: "power4.out",
+                duration: 0.7,
+                ease: "power3.out",
                 scrollTrigger: {
                     trigger: ".creator-title",
                     start: "top 90%",
@@ -5109,12 +5162,11 @@
 
             // --- SECTION THREE: LONG FORM REVEAL ---
             gsap.from(".video-wrapper", {
-                y: 100,
+                y: 60,
                 opacity: 0,
-                filter: "blur(10px)",
-                duration: 1,
-                stagger: 0.2,
-                ease: "power3.out",
+                duration: 0.6,
+                stagger: 0.1,
+                ease: "power2.out",
                 scrollTrigger: {
                     trigger: ".long-form-grid",
                     start: "top 80%",
@@ -5123,11 +5175,10 @@
             });
 
             gsap.from(".epic-title span", {
-                y: (i) => i === 0 ? -50 : 50,
+                y: (i) => i === 0 ? -40 : 40,
                 opacity: 0,
-                filter: "blur(10px)",
-                duration: 1.2,
-                ease: "power4.out",
+                duration: 0.7,
+                ease: "power3.out",
                 scrollTrigger: {
                     trigger: ".epic-title",
                     start: "top 90%",
@@ -5137,12 +5188,11 @@
 
             // --- SECTION FOUR: SHORT FORM REVEAL ---
             gsap.from(".short-video-wrapper", {
-                scale: 0.8,
-                y: 50,
+                scale: 0.9,
+                y: 40,
                 opacity: 0,
-                filter: "blur(10px)",
-                duration: 1,
-                stagger: 0.15,
+                duration: 0.6,
+                stagger: 0.08,
                 ease: "power2.out",
                 scrollTrigger: {
                     trigger: ".short-form-grid",
@@ -5152,11 +5202,10 @@
             });
 
             gsap.from(".viral-title span", {
-                x: (i) => i === 0 ? 100 : -100,
+                x: (i) => i === 0 ? 60 : -60,
                 opacity: 0,
-                filter: "blur(10px)",
-                duration: 1.2,
-                ease: "power4.out",
+                duration: 0.7,
+                ease: "power3.out",
                 scrollTrigger: {
                     trigger: ".viral-title",
                     start: "top 90%",
@@ -5165,29 +5214,31 @@
             });
         });
 
-        // --- Section Four Blue Transition Lines --- (all screen sizes)
-        const stBlueLines = {
-            trigger: ".section-three",
-            start: "top top",
-            endTrigger: ".section-four",
-            end: "bottom top",
-            scrub: true,
-        };
-        [750,880,680,820,950,720,850,650,920,780,890,690,810,870,760,1000,940,660].forEach((y, i) => {
-            gsap.to(`.bl${i + 1}`, { y: `${y}vh`, ease: "none", scrollTrigger: stBlueLines });
+        // --- Section Four Blue Transition Lines --- (desktop only — too heavy for mobile)
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+            const stBlueLines = {
+                trigger: ".section-three",
+                start: "top top",
+                endTrigger: ".section-four",
+                end: "bottom top",
+                scrub: true,
+            };
+            [750,880,680,820,950,720,850,650,920,780,890,690,810,870,760,1000,940,660].forEach((y, i) => {
+                gsap.to(`.bl${i + 1}`, { y: `${y}vh`, ease: "none", scrollTrigger: stBlueLines });
+            });
         });
 
         // --------------------------------------------------------
         // 4. FOOTER & PRICING PARALLAX
         // --------------------------------------------------------
 
-        // --- Luxurious Footer Scrub Parallax (Hero Style) ---
-        const footerParallaxST = {
+        // --- Luxurious Footer Scrub Parallax (Hero Style) — desktop only ---
+        const footerParallaxST = window.innerWidth >= 769 ? {
             trigger: ".site-footer",
             start: "top bottom",
             end: "bottom bottom",
             scrub: true,
-        };
+        } : { trigger: ".site-footer", start: "top bottom", toggleActions: "play none none none" };
 
         // Socials slide from fully-hidden above the footer-top boundary — clipped by overflow:hidden
         gsap.fromTo(
@@ -5206,39 +5257,40 @@
             },
         );
 
-        // --- PRICING SECTION: PARALLAX DEPTH (no text collision) ---
-
-        // Background PRICING title: moves opposite direction for cinematic depth
-        gsap.fromTo(
-            ".pricing-bg-title",
-            { y: "15vh" },
-            {
-                y: "-15vh",
-                ease: "none",
-                scrollTrigger: {
-                    trigger: ".pricing-section",
-                    start: "top bottom",
-                    end: "bottom top",
-                    scrub: 1.5,
+        // --- PRICING SECTION: PARALLAX DEPTH (desktop only) ---
+        gsap.matchMedia().add("(min-width: 769px)", function () {
+            // Background PRICING title: moves opposite direction for cinematic depth
+            gsap.fromTo(
+                ".pricing-bg-title",
+                { y: "15vh" },
+                {
+                    y: "-15vh",
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".pricing-section",
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: 1.5,
+                    },
                 },
-            },
-        );
+            );
 
-        // Entire card moves as ONE unit — no internal collision possible
-        gsap.fromTo(
-            ".pricing-card",
-            { y: "12vh" },
-            {
-                y: "-8vh",
-                ease: "none",
-                scrollTrigger: {
-                    trigger: ".pricing-section",
-                    start: "top bottom",
-                    end: "bottom top",
-                    scrub: 2,
+            // Entire card moves as ONE unit
+            gsap.fromTo(
+                ".pricing-card",
+                { y: "12vh" },
+                {
+                    y: "-8vh",
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: ".pricing-section",
+                        start: "top bottom",
+                        end: "bottom top",
+                        scrub: 2,
+                    },
                 },
-            },
-        );
+            );
+        });
 
         // Slot-machine digit roller — fires once on enter, premium ease
         ScrollTrigger.create({
@@ -5409,10 +5461,28 @@
                 lenis.destroy();
             }
 
-            // ── 2. ANIMATIONS: We explicitly KEEP GSAP SCRUB ANIMATIONS ON MOBILE NOW!
-            // To ensure 60-120fps without lag, we use native scroll (Lenis disabled above)
-            // and we optimized CSS via @media to remove heavy drop-shadows on mobile.
-            // (Removed the previous st.kill() code for lines and footer)
+            // ── 2. KILL heavy scrub animations on mobile — not visible / too expensive ──
+            // Kill all ScrollTrigger instances that drive decorative line elements
+            if (typeof ScrollTrigger !== "undefined") {
+                ScrollTrigger.getAll().forEach(function (st) {
+                    var trg = st.vars && st.vars.trigger;
+                    var triggerEl = typeof trg === "string" ? document.querySelector(trg) : trg;
+                    // Kill line animations (bl*, hl*) and big-text-container parallax
+                    var targets = st.vars && st.vars.targets ? st.vars.targets : [];
+                    if (!targets.length && st.animation) {
+                        targets = st.animation.targets ? st.animation.targets() : [];
+                    }
+                    var isLineAnim = false;
+                    if (targets && targets.length) {
+                        var first = targets[0];
+                        if (first && first.className && typeof first.className === "string" &&
+                            /\b(bl|hl)\d+\b/.test(first.className)) {
+                            isLineAnim = true;
+                        }
+                    }
+                    if (isLineAnim) { st.kill(); }
+                });
+            }
 
             // ── Ensure video wrappers have pointer cursors on touch ──
             document
